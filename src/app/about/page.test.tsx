@@ -136,6 +136,40 @@ describe("AboutPage", () => {
     // Nor a button: a control on a static information page would do nothing.
     expect(container.querySelector("button")).toBeNull();
   });
+
+  /*
+   * A guard for the 320 px criterion, and only a guard: jsdom does no layout,
+   * so this cannot measure a scrollbar. What it can do is catch the two ways
+   * a page in this codebase has any business overflowing — a width or a
+   * min-width pinned in pixels in the page's own markup, and the one long
+   * unbreakable token on the page (the email address) left unable to wrap.
+   * Everything else is the shell's fluid `.o-container` and `.o-grid`, which
+   * are already one column below 641 px. The real check stays the manual pass
+   * at 320 px in both colour schemes.
+   */
+  it("pins no width in pixels and lets the email address wrap", () => {
+    const { container } = render(<AboutPage />);
+
+    for (const element of container.querySelectorAll<HTMLElement>("[style]")) {
+      const { width, minWidth } = element.style;
+
+      expect([width, minWidth].join(" ")).not.toMatch(/\d\s*px/);
+    }
+
+    const mailLinks = screen
+      .getAllByRole("link")
+      .filter((link) => link.getAttribute("href") === CONTACT_MAILTO);
+
+    for (const link of mailLinks) {
+      expect(link.style.overflowWrap).toBe("anywhere");
+    }
+  });
+
+  it("adds no page-specific stylesheet or inline style block", () => {
+    const { container } = render(<AboutPage />);
+
+    expect(container.querySelector("style, link[rel='stylesheet']")).toBeNull();
+  });
 });
 
 describe("AboutPage metadata", () => {

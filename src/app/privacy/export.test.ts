@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { OPERATOR_NAME } from "@/config/site";
+import { getToolListings } from "@/tools/registry";
 
 /**
  * The slow one: it runs the real static export and reads the files that come
@@ -35,6 +36,20 @@ const readExported = (file: string): string => {
   const path = join(outDir, file);
 
   return existsSync(path) ? readFileSync(path, "utf8") : "";
+};
+
+/**
+ * One element of an exported document, from its opening tag to its closing
+ * one — enough to ask whether a link is in the header or the footer rather
+ * than merely somewhere on the page. The first match is the shell's: its
+ * `<header>` opens the body and its `<footer>` closes it, with the page's own
+ * content in the `<main>` between them.
+ */
+const sliceElement = (html: string, tag: "header" | "footer"): string => {
+  const start = html.indexOf(`<${tag}`);
+  const end = html.indexOf(`</${tag}>`, start);
+
+  return start === -1 || end === -1 ? "" : html.slice(start, end);
 };
 
 /**
@@ -155,21 +170,40 @@ describe("the static export", () => {
     expect(aboutHtml).toContain('class="o-footer"');
   });
 
-  it("links About and Privacy policy from every exported page type", () => {
-    expect(toolHtml.length).toBeGreaterThan(0);
+  it("links About and Privacy policy from the footer — and About from the header — of every exported page type", () => {
+    // Every page the export writes and a visitor can reach. The tool count
+    // comes from the registry, so a tool page missing from the export is a
+    // failure here rather than simply a shorter loop.
+    expect(toolHtml.length).toBe(getToolListings().length);
 
     const everyPage = [
-      homeHtml,
-      notFoundHtml,
-      aboutHtml,
-      privacyHtml,
-      ...toolHtml,
-    ];
+      ["the homepage", homeHtml],
+      ["the 404 page", notFoundHtml],
+      ["/about", aboutHtml],
+      ["/privacy", privacyHtml],
+      ...toolHtml.map((html, index): [string, string] => [
+        `tool page ${index + 1}`,
+        html,
+      ]),
+    ] as const;
 
-    for (const html of everyPage) {
-      expect(html.length).toBeGreaterThan(0);
-      expect(html).toContain('href="/about"');
-      expect(html).toContain('href="/privacy"');
+    for (const [name, html] of everyPage) {
+      expect(html.length, `${name} was not exported`).toBeGreaterThan(0);
+
+      // AC1 is specifically about the header and the footer, so the links are
+      // looked for inside those elements rather than anywhere in the document
+      // — a link in the body of one page would otherwise pass for all of them.
+      const header = sliceElement(html, "header");
+      const footer = sliceElement(html, "footer");
+
+      expect(header, `${name} has no header`).toContain('href="/about"');
+      expect(footer, `${name} has no About link in the footer`).toContain(
+        'href="/about"',
+      );
+      expect(
+        footer,
+        `${name} has no privacy policy link in the footer`,
+      ).toContain('href="/privacy"');
     }
   });
 });
