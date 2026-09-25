@@ -11,6 +11,7 @@ import {
 import { Container } from "@/components/layout/Container";
 import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
 import { getCategoriesInOrder } from "@/tools/categories";
+import { getToolListings } from "@/tools/registry";
 
 /**
  * The homepage's own metadata.
@@ -35,11 +36,17 @@ export const metadata: Metadata = {
  * featured row, then every tool as a card under its category heading, in the
  * order the approved directory screen draws them.
  *
- * Nothing here is a client component and nothing fetches: the whole listing is
- * rendered into `out/index.html` at build time, which is what makes it visible
- * to a crawler and to a visitor with JavaScript switched off. The search box
- * the approved screen draws in the hero is built in TKT-9 and filters this
- * listing rather than replacing it.
+ * Nothing here fetches: the whole listing is rendered into `out/index.html` at
+ * build time, which is what makes it visible to a crawler and to a visitor
+ * with JavaScript switched off. The directory is a client component only
+ * because it filters as the visitor types, and it starts with an empty query,
+ * so the pre-rendered HTML holds every tool either way — search narrows what
+ * is already on the page.
+ *
+ * The featured row is handed to the directory rather than rendered here, so
+ * that an active search can take it off screen and leave the filtered listing
+ * as the only set of tools in view. It is still rendered on the server: only
+ * the decision to show it is made in the browser.
  *
  * The registry import is also what makes a bad registry entry fail
  * `npm run build` — `validateTools` runs when the registry module is first
@@ -49,8 +56,7 @@ export default function HomePage() {
   return (
     <>
       <Hero />
-      <FeaturedTools />
-      <ToolDirectory />
+      <ToolDirectory tools={getToolListings()} featured={<FeaturedTools />} />
 
       <Container as="section" className="o-section">
         <div className="o-grid o-grid--sidebar">

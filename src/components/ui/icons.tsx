@@ -59,3 +59,22 @@ export function SwapIcon(props: IconProps) {
     </Icon>
   );
 }
+
+/** A magnifier, drawn inside the homepage's tool search field. */
+export function SearchIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="11" cy="11" r="6.5" />
+      <path d="m16 16 4 4" />
+    </Icon>
+  );
+}
+
+/** A cross: clear what has been typed into a field. */
+export function CloseIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <path d="m6 6 12 12M18 6 6 18" />
+    </Icon>
+  );
+}

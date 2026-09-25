@@ -1,8 +1,13 @@
-import { TOOL_CATEGORIES } from "./categories";
+import { groupByCategory, TOOL_CATEGORIES } from "./categories";
 import { JsonFormatter } from "./json-formatter/JsonFormatter";
 import { PasswordGenerator } from "./password-generator/PasswordGenerator";
 import { TemperatureConverter } from "./temperature-converter/TemperatureConverter";
-import type { ToolCategory, ToolDefinition, ToolsByCategory } from "./types";
+import type {
+  ToolCategory,
+  ToolDefinition,
+  ToolListing,
+  ToolsByCategory,
+} from "./types";
 import { validateTools } from "./validate";
 import { WeightConverter } from "./weight-converter/WeightConverter";
 
@@ -163,18 +168,15 @@ export const getToolBySlug = (slug: string): ToolDefinition | undefined =>
  *
  * Exported so the grouping rules can be tested against category sets the live
  * registry does not happen to produce — an empty category, in particular.
+ *
+ * The rules themselves live in `./categories.ts`, because the homepage
+ * directory regroups a filtered list in the browser and must not import this
+ * module (and every tool component with it) to do so.
  */
 export const groupToolsByCategory = (
   tools: readonly ToolDefinition[],
   categories: readonly ToolCategory[] = TOOL_CATEGORIES,
-): readonly ToolsByCategory[] =>
-  [...categories]
-    .sort((a, b) => a.order - b.order)
-    .map((category) => ({
-      category,
-      tools: tools.filter((tool) => tool.category === category.id),
-    }))
-    .filter((group) => group.tools.length > 0);
+): readonly ToolsByCategory[] => groupByCategory(tools, categories);
 
 /**
  * Tools grouped for the homepage directory: categories in their defined order,
@@ -186,3 +188,22 @@ export const getToolsByCategory = (): readonly ToolsByCategory[] =>
 /** The featured tools, in registry order. */
 export const getFeaturedTools = (): readonly ToolDefinition[] =>
   TOOLS.filter((tool) => tool.featured);
+
+/**
+ * Every tool as plain data, in registry order: the fields the homepage
+ * directory shows and its search reads, without the component.
+ *
+ * This is what the statically rendered page hands to the directory's client
+ * component (REQ-4). Keeping the component out is not tidiness — a function
+ * cannot be serialised across that boundary, and passing one would also drag
+ * every tool's implementation into the homepage's bundle.
+ */
+export const getToolListings = (): readonly ToolListing[] =>
+  TOOLS.map(({ slug, name, shortDescription, category, keywords, featured }) => ({
+    slug,
+    name,
+    shortDescription,
+    category,
+    keywords,
+    featured,
+  }));
