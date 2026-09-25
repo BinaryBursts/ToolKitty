@@ -776,6 +776,21 @@ a {
   font-weight: 600;
 }
 
+/* The privacy policy's third-party disclosure is the site's only table. The
+   shell styled its cells but never the table itself, so the base rules — and
+   the stacked form a four-column table needs on a 320 px screen — are here
+   (TKT-16). `.o-table__label` is a cell's own column name: out of the way
+   while the header row is visible, shown once the rows stack. */
+.o-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.o-table th,
+.o-table td {
+  padding: 12px 16px;
+  vertical-align: top;
+}
 .o-table th {
   font-family: var(--o-font-heading);
   font-weight: 600;
@@ -785,6 +800,31 @@ a {
 }
 .o-table td {
   border-top: 1px solid #f0e8d9;
+}
+.o-table__label {
+  display: none;
+}
+@media (max-width: 640px) {
+  .o-table thead {
+    display: none;
+  }
+  .o-table tr {
+    display: block;
+    border-top: 1px solid #f0e8d9;
+    padding: 8px 4px 14px;
+  }
+  .o-table td {
+    display: block;
+    border-top: 0;
+    padding: 6px 14px;
+  }
+  .o-table__label {
+    display: block;
+    font-size: 0.78rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--o-muted);
+  }
 }
 
 .o-stat__label {
@@ -1557,6 +1597,16 @@ a {
   .o-alert--warning {
     background: #2d2413;
     color: #f2dcaa;
+  }
+  /* The table's header band and row rules were left in the light palette,
+     which reads as a bright cream stripe across a dark card. */
+  .o-table th {
+    background: #1d2823;
+    color: #9eada4;
+  }
+  .o-table td,
+  .o-table tr {
+    border-top-color: #26332d;
   }
   .o-empty {
     background: #141d1a;

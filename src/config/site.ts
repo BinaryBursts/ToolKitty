@@ -24,6 +24,37 @@ export const SITE_DESCRIPTION =
 export const SITE_BASE_URL = "https://toolkitty.vercel.app";
 
 /**
+ * The one email address the site publishes, shown on the privacy policy and
+ * the About/contact page. There is no contact form anywhere — a form would
+ * need a server to receive it, and there is none (REQ-10).
+ *
+ * TODO(owner): replace this placeholder with the real address before launch.
+ * `example.com` is the reserved documentation domain, so mail sent here goes
+ * nowhere; it is deliberately obvious so the placeholder cannot ship unnoticed.
+ */
+export const CONTACT_EMAIL = "hello@example.com";
+
+/** The published contact address as a `mailto:` URL. */
+export const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}`;
+
+/**
+ * Who runs the site, named in the privacy policy and on the About page.
+ *
+ * TODO(owner): confirm the name to publish — this is the name the approved
+ * design draws, not a checked legal or trading name.
+ */
+export const OPERATOR_NAME = "BinaryBursts";
+
+/**
+ * The date the privacy policy was last revised, as an ISO `YYYY-MM-DD` date.
+ *
+ * REQ-10: the policy must be revised — and this date moved — whenever a new
+ * third-party script is added to the site or the way traffic is measured
+ * changes. The privacy page renders it in a readable form.
+ */
+export const PRIVACY_LAST_UPDATED = "2026-09-14";
+
+/**
  * Google Analytics 4 measurement ID (format "G-XXXXXXXXXX").
  *
  * Empty string until the owner supplies the real ID. Analytics code must treat
