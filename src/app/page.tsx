@@ -37,7 +37,6 @@ export default function HomePage() {
           .join(", ")}
         .
       </p>
-    </main>
     </Container>
   );
 }
