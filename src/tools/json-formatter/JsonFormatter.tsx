@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useId, useMemo, useState } from "react";
 
 import {
   Button,
@@ -119,7 +119,13 @@ export function quoteOffendingLine(failure: {
   return `${gutter} | ${failure.lineText}\n${blankGutter} | ${caretPad}^`;
 }
 
-/** "812 bytes", "4.2 KB", "1.1 MB" — the size beside the input's label. */
+/**
+ * "812 bytes", "4.2 KB", "1.05 MB" — the size shown against the 1 MB cap.
+ *
+ * Megabytes carry two decimals rather than one so a document just over the cap
+ * reads as 1.05 MB and not as "1.0 MB of 1 MB", which would look like it ought
+ * to have been accepted.
+ */
 export function formatByteSize(bytes: number): string {
   if (bytes < 1024) {
     return `${bytes} ${bytes === 1 ? "byte" : "bytes"}`;
@@ -129,7 +135,7 @@ export function formatByteSize(bytes: number): string {
     return `${(bytes / 1024).toFixed(1)} KB`;
   }
 
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
 /** How many lines the formatted document came out as. */
@@ -155,7 +161,10 @@ export function JsonFormatter() {
   const messageId = `${instanceId}-message`;
   const outputId = `${instanceId}-output`;
 
-  const bytes = inputByteLength(input);
+  // Measuring a megabyte of pasted text walks all of it, and the counter is
+  // re-read on every render; memoising keeps a keystroke in a large document
+  // from encoding the whole thing again for the sake of a label.
+  const bytes = useMemo(() => inputByteLength(input), [input]);
   const overCap = bytes > MAX_INPUT_BYTES;
 
   /**
@@ -240,7 +249,7 @@ export function JsonFormatter() {
               <Textarea
                 rows={8}
                 className="o-mono"
-                style={{ width: "100%", lineHeight: 1.7 }}
+                style={{ width: "100%", fontSize: "0.9rem", lineHeight: 1.7 }}
                 spellCheck={false}
                 autoComplete="off"
                 placeholder='{"order":"TK-4821","total":38.99}'
@@ -351,7 +360,7 @@ export function JsonFormatter() {
               wrap="off"
               rows={14}
               className="o-mono"
-              style={{ width: "100%", lineHeight: 1.75 }}
+              style={{ width: "100%", fontSize: "0.9rem", lineHeight: 1.75 }}
               spellCheck={false}
               placeholder={OUTPUT_PLACEHOLDER}
               value={output}

@@ -28,9 +28,7 @@ function beautify() {
 
 /** Choose one of the three indents. */
 function pickIndent(label: string) {
-  fireEvent.click(
-    screen.getByRole("radio", { name: label, hidden: false }) as HTMLElement,
-  );
+  fireEvent.click(screen.getByRole("radio", { name: label }));
 }
 
 /** The copy control. */
@@ -51,6 +49,10 @@ const SAMPLE = '{"b":1,"a":[1,2]}';
 
 afterEach(() => {
   setClipboard(undefined);
+  // Anything a test put on `navigator` or on a global comes off again, even
+  // when the test failed part-way through.
+  Reflect.deleteProperty(navigator, "sendBeacon");
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
@@ -173,6 +175,12 @@ describe("JsonFormatter", () => {
     expect(screen.getByText(TOO_LARGE_MESSAGE)).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(output()).toBe("");
+
+    // The counter says so too, and says it in a size a visitor can see is
+    // over the cap rather than rounding down to "1.0 MB of 1 MB".
+    const counter = screen.getByText(/of 1 MB$/);
+    expect(counter.textContent).toBe("1.05 MB of 1 MB");
+    expect(counter.className).toContain("o-error");
   });
 
   it("empties the input, the output and the message on Clear", () => {
@@ -302,13 +310,13 @@ describe("JsonFormatter takes nothing in and sends nothing out", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     const sendBeacon = vi.fn();
-    vi.stubGlobal("navigator", navigator);
     Object.defineProperty(navigator, "sendBeacon", {
       value: sendBeacon,
       configurable: true,
       writable: true,
     });
     const open = vi.spyOn(XMLHttpRequest.prototype, "open");
+    const send = vi.spyOn(XMLHttpRequest.prototype, "send");
     const writeText = vi.fn().mockResolvedValue(undefined);
     setClipboard({ writeText });
 
@@ -322,8 +330,10 @@ describe("JsonFormatter takes nothing in and sends nothing out", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     expect(sendBeacon).not.toHaveBeenCalled();
     expect(open).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
 
-    vi.unstubAllGlobals();
+    // The pasted document went to the clipboard and nowhere else.
+    expect(writeText).toHaveBeenCalledTimes(1);
   });
 
   it("writes to no storage and sets no cookie while it is used", () => {
@@ -399,5 +409,25 @@ describe("the screen around the beautifier", () => {
     paste("42");
     beautify();
     expect(screen.getByText("Valid JSON · 1 line")).toBeInTheDocument();
+  });
+
+  /**
+   * The 390 px layout is a visual check a person makes, but the usual cause of
+   * a phone scrolling sideways is a fixed pixel width somewhere inside the
+   * tool. Nothing here sets one: the two boxes are the full width of whatever
+   * holds them, and every row is free to wrap.
+   */
+  it("sets no fixed pixel width that could push a phone sideways", () => {
+    const { container } = render(<JsonFormatter />);
+
+    for (const element of container.querySelectorAll<HTMLElement>("[style]")) {
+      expect(element.style.width).not.toMatch(/px$/);
+      expect(element.style.minWidth).toBe("");
+    }
+
+    for (const box of container.querySelectorAll("textarea")) {
+      expect(box.style.width).toBe("100%");
+      expect(box).not.toHaveAttribute("cols");
+    }
   });
 });
