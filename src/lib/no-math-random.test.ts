@@ -1,5 +1,5 @@
 import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 import { describe, expect, it } from "vitest";
 
@@ -10,12 +10,14 @@ import { describe, expect, it } from "vitest";
  * the mistake is the kind that arrives in an unrelated change months later —
  * so the ban is enforced by the build rather than by review.
  *
- * This scans the two places the tool's code lives: `src/lib`, which holds the
- * generation module, and `src/tools`, which holds the tool components. Comments
- * are stripped first, as `add-a-tool.test.tsx` does, so prose naming the banned
- * call — this module's own documentation does — is not mistaken for a use of
- * it. Test files are skipped: they are not shipped, and this one has to be able
- * to describe what it forbids.
+ * This scans every place the tool's code can live: `src/lib`, which holds the
+ * generation module, `src/tools`, which holds the tool components, and
+ * `src/components`, where a shared control for the password screen would go.
+ * Nothing under them is exempt — an exemption is exactly the crack the mistake
+ * would come through. Comments are stripped first, as `add-a-tool.test.tsx`
+ * does, so prose naming the banned call — this module's own documentation does
+ * — is not mistaken for a use of it. Test files are skipped: they are not
+ * shipped, and this one has to be able to describe what it forbids.
  *
  * It is a guard against accident, not a security boundary: unusual formatting
  * (`globalThis["Ma" + "th"]["random"]`, say) would slip past it. Anyone with
@@ -52,25 +54,25 @@ export function usesBannedRandom(contents: string): boolean {
 const sourceRoot = join(process.cwd(), "src");
 
 /** Every shipped `.ts`/`.tsx` file under the scanned directories. */
-const files = ["lib", "tools"].flatMap((directory) =>
+const files = ["lib", "tools", "components"].flatMap((directory) =>
   readdirSync(join(sourceRoot, directory), {
     recursive: true,
     encoding: "utf8",
   })
     .map((entry) => join(directory, entry))
-    .filter(
-      (file) =>
-        /\.tsx?$/.test(file) &&
-        !file.includes(".test.") &&
-        !file.includes("/_"),
-    ),
+    .filter((file) => /\.tsx?$/.test(file) && !file.includes(".test.")),
 );
 
 describe("the scan itself", () => {
-  it("has files to scan", () => {
-    // A guard on the guard: an empty list would pass every check below.
-    expect(files.length).toBeGreaterThan(5);
+  it("has files to scan, the generation module among them", () => {
+    // A guard on the guard: an empty list would pass every check below, and a
+    // filter that quietly stopped matching would be invisible without this.
+    expect(files.length).toBeGreaterThan(20);
     expect(files).toContain(join("lib", "password.ts"));
+    expect(files).toContain(join("tools", "registry.ts"));
+    expect(files.some((file) => file.startsWith(`components${sep}`))).toBe(
+      true,
+    );
   });
 
   it("fails a module that calls the banned generator", () => {
@@ -103,7 +105,7 @@ describe("the scan itself", () => {
   });
 });
 
-describe(`no shipped module under src/lib or src/tools calls the banned generator`, () => {
+describe("no shipped module under src/lib, src/tools or src/components calls the banned generator", () => {
   it.each(files)(
     "%s uses the Web Crypto API or no randomness at all",
     (file) => {

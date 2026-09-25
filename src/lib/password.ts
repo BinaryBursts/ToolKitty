@@ -51,8 +51,12 @@ export const CHARACTER_CLASSES: readonly CharacterClass[] = [
  * no configurable set and no exclusion of look-alike characters: what a class
  * means is fixed here, so two visitors asking for the same classes draw from
  * the same alphabet.
+ *
+ * Readonly on purpose, as `ABSOLUTE_ZERO` and `INDENT_VALUES` are: a module
+ * that could assign to these sets could shrink the alphabet every password is
+ * drawn from, and the damage would be invisible in the output.
  */
-export const CHARACTER_SETS: Record<CharacterClass, string> = {
+export const CHARACTER_SETS: Readonly<Record<CharacterClass, string>> = {
   uppercase: "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
   lowercase: "abcdefghijklmnopqrstuvwxyz",
   digits: "0123456789",
@@ -72,7 +76,7 @@ export const PASSWORD_MAX_LENGTH = 64;
 export const PASSWORD_DEFAULT_LENGTH = 16;
 
 /** The toggles a visitor arrives on: all four classes enabled (REQ-7). */
-export const DEFAULT_CLASSES: CharacterClassToggles = {
+export const DEFAULT_CLASSES: Readonly<CharacterClassToggles> = {
   uppercase: true,
   lowercase: true,
   digits: true,
@@ -256,6 +260,10 @@ function elementAt<T>(items: readonly T[], index: number): T {
  * A new array holding the same items in a random order: Fisher-Yates, driven by
  * {@link randomInt} so the shuffle is as unbiased as the draws are. The input
  * is left untouched, and this is the only shuffle the module uses.
+ *
+ * The items themselves must not be `undefined` — {@link elementAt} treats an
+ * `undefined` read as the bug it would be here, and refuses it rather than
+ * dropping a character. Everything this module shuffles is a string.
  */
 export function shuffle<T>(items: readonly T[]): T[] {
   const shuffled = [...items];

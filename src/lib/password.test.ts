@@ -438,36 +438,68 @@ describe("isSecureRandomAvailable", () => {
 describe("what generation touches", () => {
   it("writes no cookie", () => {
     const before = document.cookie;
-    generatePassword({ length: 32, classes: DEFAULT_CLASSES });
+    const password = generatePassword({ length: 32, classes: DEFAULT_CLASSES });
 
     expect(document.cookie).toBe(before);
     expect(document.cookie).toBe("");
+    expect(document.cookie).not.toContain(password);
   });
 
   it("reads and writes no localStorage or sessionStorage entry", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem");
     const getItem = vi.spyOn(Storage.prototype, "getItem");
 
-    generatePassword({ length: 32, classes: DEFAULT_CLASSES });
+    const password = generatePassword({ length: 32, classes: DEFAULT_CLASSES });
 
     expect(setItem).not.toHaveBeenCalled();
     expect(getItem).not.toHaveBeenCalled();
     expect(localStorage.length).toBe(0);
     expect(sessionStorage.length).toBe(0);
+    // Belt and braces: the password is nowhere in either store, however it
+    // might have got there (REQ-15: nothing site-owned is ever written).
+    expect(
+      JSON.stringify({ ...localStorage, ...sessionStorage }),
+    ).not.toContain(password);
   });
 
-  it("makes no network call and logs nothing", () => {
+  it("makes no network call of any kind", () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
+    const sendBeacon = vi.fn();
+    vi.stubGlobal("navigator", { ...navigator, sendBeacon });
     const open = vi.spyOn(XMLHttpRequest.prototype, "open");
-    const log = vi.spyOn(console, "log").mockImplementation(() => {});
-    const error = vi.spyOn(console, "error").mockImplementation(() => {});
+    const send = vi.spyOn(XMLHttpRequest.prototype, "send");
 
     generatePassword({ length: 32, classes: DEFAULT_CLASSES });
 
     expect(fetchSpy).not.toHaveBeenCalled();
+    expect(sendBeacon).not.toHaveBeenCalled();
     expect(open).not.toHaveBeenCalled();
-    expect(log).not.toHaveBeenCalled();
-    expect(error).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  });
+
+  it("logs nothing, on any console channel", () => {
+    // A password in a console line is a password in a bug report (REQ-15).
+    const channels = [
+      "log",
+      "info",
+      "warn",
+      "error",
+      "debug",
+      "trace",
+    ] as const;
+    const spies = channels.map((channel) =>
+      vi.spyOn(console, channel).mockImplementation(() => {}),
+    );
+
+    generatePassword({ length: 32, classes: DEFAULT_CLASSES });
+    generatePassword({ length: 8, classes: only("digits") });
+
+    for (const [index, spy] of spies.entries()) {
+      expect(
+        spy,
+        `console.${channels[index]} was called`,
+      ).not.toHaveBeenCalled();
+    }
   });
 });
