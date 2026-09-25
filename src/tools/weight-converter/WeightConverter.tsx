@@ -124,7 +124,8 @@ export function WeightConverter() {
   const conversion =
     parsed.kind === "empty" ? null : convertWeight(text, fromUnit, toUnit);
 
-  const converted = conversion !== null && conversion.ok ? conversion.value : null;
+  const converted =
+    conversion !== null && conversion.ok ? conversion.value : null;
   const result = converted === null ? null : formatResult(converted);
   const error =
     conversion !== null && !conversion.ok
@@ -136,7 +137,9 @@ export function WeightConverter() {
   // that was never converted from anything.
   const readoutLabel =
     converted !== null && parsed.kind === "number"
-      ? `${text.trim()} ${nameForCount(from, parsed.value)} equals`
+      ? `${text.trim()} ${nameForCount(from, parsed.value)} ${
+          Math.abs(parsed.value) === 1 ? "equals" : "equal"
+        }`
       : `Result in ${pluralName(to)}`;
   const readoutUnit =
     converted === null
@@ -179,7 +182,10 @@ export function WeightConverter() {
                   are rejected with a message.
                 </>
               }
-              error={error}
+              // `role="alert"` so a refusal replacing a result is spoken as
+              // soon as it appears; `aria-describedby` alone is only read when
+              // focus next enters the field.
+              error={error === null ? null : <span role="alert">{error}</span>}
             >
               <div
                 className="t-recess o-row"
@@ -274,7 +280,9 @@ export function WeightConverter() {
         <h2 className="o-h2">Common questions</h2>
 
         <div className="t-faq">
-          <h3 className="t-faq__q">Why does a tiny value show more decimals?</h3>
+          <h3 className="t-faq__q">
+            Why does a tiny value show more decimals?
+          </h3>
           <p className="o-text o-muted" style={{ margin: 0 }}>
             Because two decimals would round it away to nothing. Below 0.01 the
             result switches to four significant figures, so a milligram in

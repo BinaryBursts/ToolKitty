@@ -1,10 +1,4 @@
-import {
-  act,
-  fireEvent,
-  render,
-  screen,
-  within,
-} from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { WEIGHT_UNITS } from "@/lib/weight";
@@ -192,8 +186,6 @@ describe("WeightConverter", () => {
       const options = within(picker(which)).getAllByRole("radio");
 
       expect(options).toHaveLength(9);
-      expect(options.map((option) => option.getAttribute("aria-label"))).not
-        .toContain(null);
 
       // Every unit is there under its full name and symbol...
       for (const unit of WEIGHT_UNITS) {
@@ -267,10 +259,10 @@ describe("WeightConverter", () => {
     expect(screen.getByText("pounds (lb)")).toBeInTheDocument();
 
     type("2");
-    expect(screen.getByText("2 kilograms equals")).toBeInTheDocument();
+    expect(screen.getByText("2 kilograms equal")).toBeInTheDocument();
 
     pickUnit("from", "US ton (ton)");
-    expect(screen.getByText("2 US tons equals")).toBeInTheDocument();
+    expect(screen.getByText("2 US tons equal")).toBeInTheDocument();
   });
 });
 

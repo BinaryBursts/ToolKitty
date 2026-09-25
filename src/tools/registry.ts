@@ -29,6 +29,7 @@ const TOOLS: readonly ToolDefinition[] = [
       "Convert between kilograms, pounds, ounces, grams, stones and tonnes.",
     category: "converters",
     keywords: [
+      "weight converter",
       "weight",
       "mass",
       "unit",
@@ -42,18 +43,22 @@ const TOOLS: readonly ToolDefinition[] = [
       "grams",
       "stones",
       "tonnes",
+      "US tons",
+      "troy ounce",
       "metric",
       "imperial",
       "kg to lbs",
+      "grams to ounces",
     ],
-    seoTitle: "Weight Converter — kg, lb, oz, g and stones | ToolKitty",
+    seoTitle:
+      "Weight Converter — kg to lbs, grams, ounces and troy ounces | ToolKitty",
     metaDescription:
-      "Free weight converter: kilograms, pounds, ounces, grams, stones and tonnes, converted as you type. Runs entirely in your browser.",
+      "Convert between nine weight units — kg to lbs, grams to ounces, troy ounces, stones, tonnes and US tons — as you type. Runs entirely in your browser.",
     featured: true,
     component: WeightConverter,
     supportingCopy: [
-      "Type a value, pick the unit you have and the unit you want, and the result appears as you type. Every one of the nine supported units converts to every other, so you can go from grams to stones or from tonnes to ounces without a second step.",
-      "The conversion happens in your browser using exact unit factors — there is no rounding beyond what is shown, and nothing you type is sent anywhere.",
+      "This converter turns a weight typed in any of nine units into any other, using the exact definitions rather than rounded shortcuts: every value is routed through grams, where a pound is 453.59237 g, an ounce 28.349523125 g and a US ton 907184.74 g. Type a number, choose the unit you have and the unit you want, and the answer updates on every keystroke — there is no convert button and no page reload.",
+      "Use the swap control to flip the two units without retyping the value: 1 kilogram to pounds becomes 1 pound to kilograms, and the result reads 0.45. Letters, blank fields and negative weights show a short message in place of a wrong answer, and values large enough to lose precision say so rather than rounding silently.",
     ],
   },
   {
