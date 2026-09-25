@@ -180,6 +180,9 @@ describe("TemperatureConverter", () => {
     expect(readout()).toBe("—");
     expect(field()).toHaveValue("abc");
     expect(field()).toHaveAttribute("aria-invalid", "true");
+    // The screen draws a refused field in its error state, not only the
+    // message below it.
+    expect(field()).toHaveClass("o-input--error");
   });
 
   it.each([
@@ -196,6 +199,9 @@ describe("TemperatureConverter", () => {
     expect(readout()).toBe("—");
     expect(field()).toHaveValue(value);
     expect(field()).toHaveAttribute("aria-invalid", "true");
+    expect(field()).toHaveClass("o-input--error");
+    // A refusal is announced as soon as it replaces a result.
+    expect(screen.getByRole("alert")).toHaveTextContent(BELOW_ABSOLUTE_ZERO);
   });
 
   it("converts absolute zero itself, which is a value and not an error", () => {
@@ -379,28 +385,52 @@ describe("TemperatureConverter on the keyboard alone", () => {
     ).toBeChecked();
   });
 
-  it("reaches every control without a mouse", () => {
+  it("reaches every control without a mouse, in the order they are read", () => {
     render(<TemperatureConverter />);
 
     type("100");
 
-    const focusable = [
+    const tabStop = (which: "from" | "to"): HTMLElement => {
+      const stops = within(picker(which))
+        .getAllByRole("radio")
+        .filter((option) => option.getAttribute("tabindex") !== "-1");
+
+      expect(stops).toHaveLength(1);
+      return stops[0] as HTMLElement;
+    };
+
+    const inTabOrder = [
       field(),
-      ...within(picker("from"))
-        .getAllByRole("radio")
-        .filter((option) => option.getAttribute("tabindex") !== "-1"),
+      tabStop("from"),
       swapButton(),
-      ...within(picker("to"))
-        .getAllByRole("radio")
-        .filter((option) => option.getAttribute("tabindex") !== "-1"),
+      tabStop("to"),
       screen.getByRole("button", { name: /Copy result/ }),
     ];
 
-    for (const element of focusable) {
+    for (const element of inTabOrder) {
+      // Native controls are what makes Enter and Space work at all: a `div`
+      // with an onClick would pass a focus test and still be dead on the
+      // keyboard. Nothing here is disabled or taken out of the tab order.
+      expect(["INPUT", "BUTTON"]).toContain(element.tagName);
+      expect(element).not.toBeDisabled();
+      expect(element.getAttribute("tabindex")).not.toBe("-1");
+
       act(() => {
         element.focus();
       });
       expect(document.activeElement).toBe(element);
+    }
+
+    // Tab follows document order, so document order is the tab order: field,
+    // from-scale, swap, to-scale, copy — the order the screen reads in.
+    for (let index = 1; index < inTabOrder.length; index += 1) {
+      const previous = inTabOrder[index - 1] as Node;
+      const current = inTabOrder[index] as Node;
+
+      expect(
+        previous.compareDocumentPosition(current) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
     }
   });
 });

@@ -13,14 +13,17 @@ import ToolPage, { generateStaticParams } from "@/app/tools/[slug]/page";
  * (REQ-2). This checks the route the static export actually writes — the tool
  * rendered inside the template, as HTML — rather than the component on its own.
  *
- * The last test reads `out/`, which only exists after `npm run build`. It is
- * skipped when the export has not been run, so the suite stays fast on its own
- * and still checks the real artefact when the build has produced one.
+ * The last test reads the export in `out/`, which only exists after
+ * `npm run build`. It is skipped when **the export as a whole** has not been
+ * run — not when this one file is missing, which is precisely the failure it
+ * is here to catch — so the suite stays fast on its own and still fails if a
+ * build produces everything except this route.
  */
 
 const SLUG = "temperature-converter";
 
-const exportedPage = join(process.cwd(), "out", "tools", `${SLUG}.html`);
+const exportDir = join(process.cwd(), "out");
+const exportedPage = join(exportDir, "tools", `${SLUG}.html`);
 
 /** Render the route exactly as the static export does: params in, element out. */
 const renderRoute = async (): Promise<ReactElement> =>
@@ -58,13 +61,18 @@ describe("/tools/temperature-converter", () => {
     expect(markup).toContain("Copy result");
   });
 
-  it.skipIf(!existsSync(exportedPage))(
+  it.skipIf(!existsSync(exportDir))(
     "is written to out/tools/temperature-converter.html by the export",
     () => {
+      // The build ran, so this route must be among what it wrote.
+      expect(existsSync(exportedPage)).toBe(true);
+
       const html = readFileSync(exportedPage, "utf8");
 
       expect(html).toContain("Temperature to convert");
       expect(html).toContain("Swap scales");
+      // The tool is inside the shared template, not a page of its own.
+      expect(html).toContain('data-section="tool"');
     },
   );
 });
