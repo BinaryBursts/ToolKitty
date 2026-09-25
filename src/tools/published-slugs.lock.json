@@ -1,0 +1,9 @@
+{
+  "$comment": "Tool URLs are permanent (REQ-2): once a slug is published it is never renamed or removed, because links, bookmarks and search results point at it. Every slug listed here has been published and must stay in the registry; published-slugs.test.ts fails if one goes missing. Add a slug here when its tool ships. Never delete or edit one — to rename a tool, change its display name in registry.ts and leave the slug alone.",
+  "slugs": [
+    "weight-converter",
+    "temperature-converter",
+    "password-generator",
+    "json-formatter"
+  ]
+}
