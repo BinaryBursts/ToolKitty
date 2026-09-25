@@ -37,10 +37,4 @@ export { Slider, type SliderProps } from "./Slider";
 export { SwapButton, type SwapButtonProps } from "./SwapButton";
 export { Textarea, type TextareaProps } from "./Textarea";
 export { TextInput, type TextInputProps } from "./TextInput";
-export {
-  CheckIcon,
-  CloseIcon,
-  CopyIcon,
-  SearchIcon,
-  SwapIcon,
-} from "./icons";
+export { CheckIcon, CloseIcon, CopyIcon, SearchIcon, SwapIcon } from "./icons";

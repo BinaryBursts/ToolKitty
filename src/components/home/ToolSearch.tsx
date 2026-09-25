@@ -28,7 +28,11 @@ export const SEARCH_HELP =
  * Every keystroke filters, with no debounce: the whole registry is a handful
  * of objects already in memory, so there is nothing to wait for.
  */
-export function ToolSearch({ value, onChange, id = "tool-search" }: ToolSearchProps) {
+export function ToolSearch({
+  value,
+  onChange,
+  id = "tool-search",
+}: ToolSearchProps) {
   return (
     <Field label="Search tools" help={SEARCH_HELP} id={id} className="t-search">
       <div className="o-search">

@@ -33,9 +33,7 @@ describe("HomePage", () => {
     for (const tool of getAllTools()) {
       const links = screen
         .getAllByRole("link")
-        .filter(
-          (link) => link.getAttribute("href") === `/tools/${tool.slug}`,
-        );
+        .filter((link) => link.getAttribute("href") === `/tools/${tool.slug}`);
 
       expect(links.length).toBeGreaterThan(0);
     }

@@ -643,13 +643,25 @@ a {
   /* The icon is decoration: clicking it should land in the field. */
   pointer-events: none;
 }
-.o-search__clear {
+/* Both classes, deliberately: a bare `.o-search__clear` would be overridden by
+   the dark scheme's `.o-btn`, which comes later in this file, and the clear
+   control would gain a filled pill inside the field. */
+.o-btn.o-search__clear {
   position: absolute;
   right: 5px;
   top: 5px;
   bottom: 5px;
   width: 38px;
   min-height: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--o-muted);
+}
+.o-btn.o-search__clear:hover,
+.o-btn.o-search__clear:focus-visible {
+  background: transparent;
+  color: var(--o-text);
 }
 /* Chrome and Safari draw a clear affordance of their own inside a
    `type="search"` field; it would sit underneath ours. */

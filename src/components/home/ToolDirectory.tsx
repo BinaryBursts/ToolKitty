@@ -6,8 +6,9 @@ import { Container } from "@/components/layout/Container";
 import { Button } from "@/components/ui";
 import { filterTools } from "@/lib/searchTools";
 import { groupByCategory } from "@/tools/categories";
-import type { CategoryId, ToolListing } from "@/tools/types";
+import type { ToolListing } from "@/tools/types";
 
+import { categorySectionId, DIRECTORY_ID } from "./directoryAnchors";
 import { ToolCard } from "./ToolCard";
 import { ToolSearch } from "./ToolSearch";
 
@@ -25,13 +26,6 @@ export type ToolDirectoryProps = {
    */
   featured?: ReactNode;
 };
-
-/** Anchor for the directory as a whole. */
-export const DIRECTORY_ID = "all-tools";
-
-/** Anchor for one category's section, used by the "browse by category" links. */
-export const categorySectionId = (category: CategoryId): string =>
-  `category-${category}`;
 
 /** The message shown in place of the listing when nothing matches. */
 export const NO_RESULTS_MESSAGE = "No tools match that search.";
@@ -95,11 +89,7 @@ export function ToolDirectory({ tools, featured }: ToolDirectoryProps) {
             </h2>
             {/* The count is the live region: one element that both shows and
                 announces how many tools are left as the query changes. */}
-            <span
-              className="o-small o-muted"
-              role="status"
-              aria-live="polite"
-            >
+            <span className="o-small o-muted" role="status" aria-live="polite">
               {resultSummary(matches.length, searching)}
             </span>
           </div>

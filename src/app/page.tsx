@@ -6,8 +6,8 @@ import { Hero } from "@/components/home/Hero";
 import {
   categorySectionId,
   DIRECTORY_ID,
-  ToolDirectory,
-} from "@/components/home/ToolDirectory";
+} from "@/components/home/directoryAnchors";
+import { ToolDirectory } from "@/components/home/ToolDirectory";
 import { Container } from "@/components/layout/Container";
 import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
 import { getCategoriesInOrder } from "@/tools/categories";

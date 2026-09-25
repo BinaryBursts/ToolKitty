@@ -199,11 +199,13 @@ export const getFeaturedTools = (): readonly ToolDefinition[] =>
  * every tool's implementation into the homepage's bundle.
  */
 export const getToolListings = (): readonly ToolListing[] =>
-  TOOLS.map(({ slug, name, shortDescription, category, keywords, featured }) => ({
-    slug,
-    name,
-    shortDescription,
-    category,
-    keywords,
-    featured,
-  }));
+  TOOLS.map(
+    ({ slug, name, shortDescription, category, keywords, featured }) => ({
+      slug,
+      name,
+      shortDescription,
+      category,
+      keywords,
+      featured,
+    }),
+  );
