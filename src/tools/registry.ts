@@ -1,8 +1,8 @@
-import { getCategoriesInOrder } from "./categories";
+import { TOOL_CATEGORIES } from "./categories";
 import { JsonFormatter } from "./json-formatter/JsonFormatter";
 import { PasswordGenerator } from "./password-generator/PasswordGenerator";
 import { TemperatureConverter } from "./temperature-converter/TemperatureConverter";
-import type { ToolDefinition, ToolsByCategory } from "./types";
+import type { ToolCategory, ToolDefinition, ToolsByCategory } from "./types";
 import { validateTools } from "./validate";
 import { WeightConverter } from "./weight-converter/WeightConverter";
 
@@ -157,16 +157,31 @@ export const getToolBySlug = (slug: string): ToolDefinition | undefined =>
   TOOLS.find((tool) => tool.slug === slug);
 
 /**
+ * Group any set of tools under any set of categories: categories ascending by
+ * `order`, tools in the order given within each, and a category with no tools
+ * left out entirely so the directory never renders an empty heading.
+ *
+ * Exported so the grouping rules can be tested against category sets the live
+ * registry does not happen to produce — an empty category, in particular.
+ */
+export const groupToolsByCategory = (
+  tools: readonly ToolDefinition[],
+  categories: readonly ToolCategory[] = TOOL_CATEGORIES,
+): readonly ToolsByCategory[] =>
+  [...categories]
+    .sort((a, b) => a.order - b.order)
+    .map((category) => ({
+      category,
+      tools: tools.filter((tool) => tool.category === category.id),
+    }))
+    .filter((group) => group.tools.length > 0);
+
+/**
  * Tools grouped for the homepage directory: categories in their defined order,
  * tools in registry order within each, and categories with no tools left out.
  */
 export const getToolsByCategory = (): readonly ToolsByCategory[] =>
-  getCategoriesInOrder()
-    .map((category) => ({
-      category,
-      tools: TOOLS.filter((tool) => tool.category === category.id),
-    }))
-    .filter((group) => group.tools.length > 0);
+  groupToolsByCategory(TOOLS, TOOL_CATEGORIES);
 
 /** The featured tools, in registry order. */
 export const getFeaturedTools = (): readonly ToolDefinition[] =>
