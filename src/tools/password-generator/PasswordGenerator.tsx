@@ -91,16 +91,72 @@ const CLASS_HINTS: Readonly<Record<CharacterClass, string>> = {
   symbols: CHARACTER_SETS.symbols.slice(0, 8),
 };
 
+/**
+ * What the tool has to show: the password itself, and whether this browser can
+ * make one at all. They are one piece of state because they change together —
+ * a browser that cannot generate has no password to show, and a password that
+ * arrives proves the browser can.
+ */
+type Generated = {
+  /** The password on screen, or "" before the browser has made one. */
+  readonly password: string;
+  /** True where the Web Crypto API is missing; nothing is generated. */
+  readonly unsupported: boolean;
+};
+
+/** Nothing generated yet: what the server renders, and every fresh mount. */
+const NOTHING_GENERATED: Generated = { password: "", unsupported: false };
+
+/**
+ * The next password for these settings, given what is on screen now.
+ *
+ * Three answers, and two of them keep the password already showing:
+ *
+ * - No Web Crypto API — say so and generate nothing. There is deliberately no
+ *   fallback to a weaker source of randomness (REQ-7).
+ * - No character class enabled — leave the previous password untouched; the
+ *   screen disables Generate and says at least one type is needed.
+ * - Otherwise a fresh, independent password, with no trace of the last one.
+ */
+function nextGenerated(
+  previous: Generated,
+  length: number,
+  classes: CharacterClassToggles,
+): Generated {
+  // Asked every time rather than once, so a browser that exposes Web Crypto
+  // late — and a test that takes it away — both get an honest answer.
+  if (!isSecureRandomAvailable()) {
+    return { ...previous, unsupported: true };
+  }
+
+  if (enabledClasses(classes).length === 0) {
+    return { ...previous, unsupported: false };
+  }
+
+  try {
+    return {
+      password: generatePassword({ length, classes }),
+      unsupported: false,
+    };
+  } catch {
+    // The only failure the module has left by here is the Web Crypto API
+    // going away mid-session. The error is not shown verbatim and not logged:
+    // nothing that has touched a password is printed anywhere.
+    return { ...previous, unsupported: true };
+  }
+}
+
 export function PasswordGenerator() {
   const [length, setLength] = useState<number>(PASSWORD_DEFAULT_LENGTH);
   const [classes, setClasses] = useState<CharacterClassToggles>({
     ...DEFAULT_CLASSES,
   });
-  const [password, setPassword] = useState("");
-  const [unsupported, setUnsupported] = useState(false);
+  const [generated, setGenerated] = useState<Generated>(NOTHING_GENERATED);
   // Bumped by Generate, so pressing it with the settings unchanged is still a
   // change the effect below reacts to — and so generation has one code path.
   const [nonce, setNonce] = useState(0);
+
+  const { password, unsupported } = generated;
 
   const instanceId = useId();
   const lengthId = `${instanceId}-length`;
@@ -109,31 +165,18 @@ export function PasswordGenerator() {
 
   const noneEnabled = enabledClasses(classes).length === 0;
 
+  // Generation lives in an effect on purpose, which is why the "no setState in
+  // an effect" rule is turned off for this one line. The rule is about
+  // cascading renders; here the extra render *is* the feature. This page is
+  // statically exported, so anything produced during render is written into
+  // the HTML everybody downloads — one password, shipped from a server, for
+  // every visitor. Doing it after mount is what keeps the exported file empty
+  // of passwords, and `static-route.test.tsx` fails if that ever stops being
+  // true. It runs once on mount and once per change of length, toggles or a
+  // press of Generate: one extra render each time, on a keystroke-free path.
   useEffect(() => {
-    // Asked every time rather than once: there is no fallback to a weaker
-    // source of randomness, so a browser without Web Crypto is told so and
-    // left with nothing rather than handed a password it cannot trust.
-    if (!isSecureRandomAvailable()) {
-      setUnsupported(true);
-      return;
-    }
-
-    setUnsupported(false);
-
-    // Every class off: the previous password stays on screen untouched, and
-    // the message below the readout says why Generate is greyed out (REQ-7).
-    if (enabledClasses(classes).length === 0) {
-      return;
-    }
-
-    try {
-      setPassword(generatePassword({ length, classes }));
-    } catch {
-      // The only failure the module has left by here is the Web Crypto API
-      // going away mid-session. The error is not shown verbatim and not
-      // logged: nothing that has touched a password is printed anywhere.
-      setUnsupported(true);
-    }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
+    setGenerated((previous) => nextGenerated(previous, length, classes));
   }, [length, classes, nonce]);
 
   /** A fresh, independent password from the settings already on screen. */
