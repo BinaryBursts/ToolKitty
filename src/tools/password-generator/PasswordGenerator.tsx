@@ -108,41 +108,84 @@ type Generated = {
 const NOTHING_GENERATED: Generated = { password: "", unsupported: false };
 
 /**
- * The next password for these settings, given what is on screen now.
- *
- * Three answers, and two of them keep the password already showing:
- *
- * - No Web Crypto API — say so and generate nothing. There is deliberately no
- *   fallback to a weaker source of randomness (REQ-7).
- * - No character class enabled — leave the previous password untouched; the
- *   screen disables Generate and says at least one type is needed.
- * - Otherwise a fresh, independent password, with no trace of the last one.
+ * What one attempt at generation came to. Two of the three outcomes keep the
+ * password already on screen, so applying an attempt needs to know which.
  */
-function nextGenerated(
-  previous: Generated,
+type Attempt =
+  | { readonly kind: "password"; readonly password: string }
+  | { readonly kind: "unsupported" }
+  | { readonly kind: "no-class" };
+
+/**
+ * The length the slider is asking for, made safe to generate with.
+ *
+ * The range input's `min`, `max` and `step` are what a visitor meets, but the
+ * value still arrives as a string from the DOM and is treated as untrusted
+ * (REQ-15): anything that is not a whole number in range is brought back into
+ * range here rather than handed to {@link generatePassword}, which would throw
+ * and be reported as a browser that cannot generate — the wrong message for
+ * the wrong reason.
+ */
+export function safeLength(raw: string): number {
+  const value = Number.parseInt(raw, 10);
+
+  if (!Number.isFinite(value)) {
+    return PASSWORD_DEFAULT_LENGTH;
+  }
+
+  return Math.min(Math.max(value, PASSWORD_MIN_LENGTH), PASSWORD_MAX_LENGTH);
+}
+
+/**
+ * One attempt at a password for these settings.
+ *
+ * - No Web Crypto API — generate nothing and say so. There is deliberately no
+ *   fallback to a weaker source of randomness (REQ-7).
+ * - No character class enabled — nothing to draw from; the screen disables
+ *   Generate, says at least one type is needed, and keeps the old password.
+ * - Otherwise a fresh, independent password, with no trace of the last one.
+ *
+ * This is where the randomness is drawn, which is why it is called once in the
+ * effect rather than inside the state updater: a `useState` updater has to be
+ * pure, and React may run it more than once.
+ */
+function attemptGeneration(
   length: number,
   classes: CharacterClassToggles,
-): Generated {
+): Attempt {
   // Asked every time rather than once, so a browser that exposes Web Crypto
   // late — and a test that takes it away — both get an honest answer.
   if (!isSecureRandomAvailable()) {
-    return { ...previous, unsupported: true };
+    return { kind: "unsupported" };
   }
 
   if (enabledClasses(classes).length === 0) {
-    return { ...previous, unsupported: false };
+    return { kind: "no-class" };
   }
 
   try {
     return {
+      kind: "password",
       password: generatePassword({ length, classes }),
-      unsupported: false,
     };
   } catch {
-    // The only failure the module has left by here is the Web Crypto API
+    // With the length already brought into range and a class known to be
+    // enabled, the only failure the module has left is the Web Crypto API
     // going away mid-session. The error is not shown verbatim and not logged:
     // nothing that has touched a password is printed anywhere.
-    return { ...previous, unsupported: true };
+    return { kind: "unsupported" };
+  }
+}
+
+/** What the screen shows once an attempt has been made. Pure. */
+function applyAttempt(previous: Generated, attempt: Attempt): Generated {
+  switch (attempt.kind) {
+    case "password":
+      return { password: attempt.password, unsupported: false };
+    case "no-class":
+      return { ...previous, unsupported: false };
+    case "unsupported":
+      return { ...previous, unsupported: true };
   }
 }
 
@@ -175,8 +218,12 @@ export function PasswordGenerator() {
   // true. It runs once on mount and once per change of length, toggles or a
   // press of Generate: one extra render each time, on a keystroke-free path.
   useEffect(() => {
+    // Drawn once, here, and only then applied: a state updater must be pure,
+    // and this one would otherwise draw a second password under StrictMode.
+    const attempt = attemptGeneration(length, classes);
+
     // eslint-disable-next-line react-hooks/set-state-in-effect -- see above
-    setGenerated((previous) => nextGenerated(previous, length, classes));
+    setGenerated((previous) => applyAttempt(previous, attempt));
   }, [length, classes, nonce]);
 
   /** A fresh, independent password from the settings already on screen. */
@@ -288,7 +335,7 @@ export function PasswordGenerator() {
                   valueText={`${String(length)} characters`}
                   marks={LENGTH_MARKS}
                   onChange={(event) => {
-                    setLength(Number(event.target.value));
+                    setLength(safeLength(event.target.value));
                   }}
                 />
               </div>

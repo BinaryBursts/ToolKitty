@@ -117,6 +117,8 @@ describe("/tools/password-generator", () => {
   it("would notice a password if one were rendered", () => {
     // A guard on the guard: the scan above passes trivially if it stops
     // matching, so it is shown here catching the thing it exists to catch.
+    // The string is the sample drawn on the approved screen, not a credential:
+    // nothing on this site has one to leak.
     expect(passwordShapedWords("<div>qR7!vTm2%eXk9Zda</div>")).toEqual([
       "qR7!vTm2%eXk9Zda",
     ]);

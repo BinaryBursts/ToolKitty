@@ -7,6 +7,7 @@ import { CHARACTER_SETS } from "@/lib/password";
 import {
   NO_CLASS_MESSAGE,
   PasswordGenerator,
+  safeLength,
   UNSUPPORTED_MESSAGE,
 } from "./PasswordGenerator";
 
@@ -115,6 +116,32 @@ describe("PasswordGenerator", () => {
     expect(slider()).toHaveAttribute("min", "8");
     expect(slider()).toHaveAttribute("max", "64");
     expect(slider()).toHaveAttribute("step", "1");
+  });
+
+  it("brings a length the DOM should not have produced back into range", () => {
+    // The value arrives as a string and is treated as untrusted: the control's
+    // own attributes are the first guard, not the only one.
+    expect(safeLength("8")).toBe(8);
+    expect(safeLength("64")).toBe(64);
+    expect(safeLength("0")).toBe(8);
+    expect(safeLength("-5")).toBe(8);
+    expect(safeLength("1000")).toBe(64);
+    expect(safeLength("20.7")).toBe(20);
+    expect(safeLength("")).toBe(16);
+    expect(safeLength("not a number")).toBe(16);
+  });
+
+  it("still shows a password when the slider reports a value out of range", () => {
+    render(<PasswordGenerator />);
+
+    // A tampered-with control must not be answered with the
+    // "unsupported browser" message, which is what an unchecked length handed
+    // to the generator would produce.
+    fireEvent.change(slider(), { target: { value: "900" } });
+
+    expect(shown()).toHaveLength(64);
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(generateButton()).toBeEnabled();
   });
 
   it("regenerates from the classes left on", () => {
