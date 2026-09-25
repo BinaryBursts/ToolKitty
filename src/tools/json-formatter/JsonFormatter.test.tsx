@@ -394,5 +394,10 @@ describe("the screen around the beautifier", () => {
     beautify();
 
     expect(screen.getByText("Valid JSON · 7 lines")).toBeInTheDocument();
+
+    // A lone value formats to one line, and says so in the singular.
+    paste("42");
+    beautify();
+    expect(screen.getByText("Valid JSON · 1 line")).toBeInTheDocument();
   });
 });

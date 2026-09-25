@@ -137,6 +137,13 @@ function countLines(output: string): number {
   return output === "" ? 0 : output.split("\n").length;
 }
 
+/** "23 lines", but "1 line" — a lone number formats to a single line. */
+function lineCountLabel(output: string): string {
+  const lines = countLines(output);
+
+  return `${lines} ${lines === 1 ? "line" : "lines"}`;
+}
+
 export function JsonFormatter() {
   const [state, setState] = useState<ToolState>(INITIAL_STATE);
   const { input, indent, output, message } = state;
@@ -315,7 +322,7 @@ export function JsonFormatter() {
                 </label>
                 {output === "" ? null : (
                   <span className="o-badge o-badge--success">
-                    Valid JSON · {countLines(output)} lines
+                    Valid JSON · {lineCountLabel(output)}
                   </span>
                 )}
               </div>
