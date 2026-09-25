@@ -1345,6 +1345,22 @@ a {
   .t-device {
     border-radius: 28px;
   }
+  /* The tool pages' privacy notice has to be read before the visitor types,
+     which on a phone means fitting above the fold without losing a word of it
+     (REQ-9). The type scale and the padding give way; the wording does not. */
+  .t-privacy {
+    gap: 10px;
+    padding: 12px 14px;
+    border-radius: 18px;
+  }
+  .t-privacy .o-text {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+  .t-privacy .o-icon {
+    width: 18px;
+    height: 18px;
+  }
   .t-seg__btn {
     padding: 10px 13px;
     font-size: 0.86rem;
