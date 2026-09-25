@@ -1,42 +1,112 @@
-import { Container } from "@/components/layout/Container";
-import { SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-import { getAllTools } from "@/tools/registry";
+import { FeaturedTools } from "@/components/home/FeaturedTools";
+import { Hero } from "@/components/home/Hero";
+import {
+  categorySectionId,
+  DIRECTORY_ID,
+  ToolDirectory,
+} from "@/components/home/ToolDirectory";
+import { Container } from "@/components/layout/Container";
+import { SITE_BASE_URL, SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
+import { getCategoriesInOrder } from "@/tools/categories";
 
 /**
- * Placeholder home page. The real homepage — hero, featured tools and
- * category-grouped tool cards — is built in a later ticket (REQ-4); this page
- * exists so the scaffold builds, renders and is covered by a test from the
- * first commit.
+ * The homepage's own metadata.
  *
- * It names the registered tools from the tool registry (REQ-2) rather than
- * listing them by hand. That is deliberate and is the only reason this file is
- * touched by the registry ticket: the registry validates itself when it is first
- * imported, so something in the build has to import it for a duplicate slug or a
- * missing SEO title to fail `npm run build`. Until the tool pages exist (TKT-6),
- * this page is that something. Keep the import when this placeholder is replaced
- * by the real directory, which reads the registry properly.
- * The `<main>` element now belongs to the root layout, so pages render their
- * sections directly.
+ * `title.absolute` because the root layout carries a `%s · ToolKitty`
+ * template and this title already ends in the site name. The description is
+ * the site's one-liner rather than anything built from the registry, so
+ * adding a tool never silently rewrites the homepage's search snippet.
+ */
+export const metadata: Metadata = {
+  title: {
+    absolute: `${SITE_NAME} — fast, private browser tools`,
+  },
+  description: SITE_DESCRIPTION,
+  alternates: {
+    canonical: `${SITE_BASE_URL}/`,
+  },
+};
+
+/**
+ * The tool directory (REQ-4): a short hero saying what ToolKitty is, the
+ * featured row, then every tool as a card under its category heading, in the
+ * order the approved directory screen draws them.
+ *
+ * Nothing here is a client component and nothing fetches: the whole listing is
+ * rendered into `out/index.html` at build time, which is what makes it visible
+ * to a crawler and to a visitor with JavaScript switched off. The search box
+ * the approved screen draws in the hero is built in TKT-9 and filters this
+ * listing rather than replacing it.
+ *
+ * The registry import is also what makes a bad registry entry fail
+ * `npm run build` — `validateTools` runs when the registry module is first
+ * imported (REQ-2), and this page is one of the things that imports it.
  */
 export default function HomePage() {
   return (
-    <Container as="section" className="o-section o-stack">
-      <h1 className="o-display">{SITE_NAME}</h1>
-      <p className="o-lead">{SITE_DESCRIPTION}</p>
-      <p className="o-small o-muted">
-        The site shell is in place; the first tools are on their way.
-      </p>
-      <p className="text-sm text-zinc-500">
-        The site shell and the first tools are on their way.
-      </p>
-      <p className="text-sm text-zinc-500">
-        Registered so far:{" "}
-        {getAllTools()
-          .map((tool) => tool.name)
-          .join(", ")}
-        .
-      </p>
-    </Container>
+    <>
+      <Hero />
+      <FeaturedTools />
+      <ToolDirectory />
+
+      <Container as="section" className="o-section">
+        <div className="o-grid o-grid--sidebar">
+          <div className="o-stack t-copy">
+            <h2 className="o-h2">What {SITE_NAME} is</h2>
+            <p className="o-text">
+              {SITE_NAME} is a small collection of everyday utilities that do
+              their work in the page you are looking at. When you convert 68 kg
+              to pounds or paste in a block of JSON, the calculation happens in
+              your browser — there is no server to send it to.
+            </p>
+            <p className="o-text">
+              There are no accounts, no saved history and no preferences to
+              manage. Close the tab and the site forgets you completely: no
+              stored units, no recent conversions, not even a theme choice —
+              the page simply follows the light or dark setting your system
+              already uses.
+            </p>
+            <div className="t-privacy">
+              <p className="o-text" style={{ margin: 0 }}>
+                <span className="o-strong">
+                  Nothing you type ever leaves your browser.
+                </span>{" "}
+                Every tool runs on your device.{" "}
+                <Link href="/privacy">Read the privacy policy</Link>
+              </p>
+            </div>
+          </div>
+
+          <aside className="o-card o-stack">
+            <div className="o-card__header">Browse by category</div>
+            <div className="o-row">
+              <a className="o-chip" href={`#${DIRECTORY_ID}`}>
+                All
+              </a>
+              {getCategoriesInOrder().map((category) => (
+                <a
+                  className="o-chip"
+                  href={`#${categorySectionId(category.id)}`}
+                  key={category.id}
+                >
+                  {category.name}
+                </a>
+              ))}
+            </div>
+            <hr className="o-divider" />
+            <p className="o-small o-muted" style={{ margin: 0 }}>
+              More tools are on the way. Every one gets a permanent address
+              under <span className="o-mono">/tools/</span> that never changes.
+            </p>
+            <Link className="o-btn o-btn--secondary o-btn--sm" href="/about">
+              Suggest a tool
+            </Link>
+          </aside>
+        </div>
+      </Container>
+    </>
   );
 }
