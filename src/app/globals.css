@@ -228,6 +228,18 @@ a {
   min-width: 0;
 }
 
+/* Card grids, as the approved screens draw them: three across on a wide
+   screen, and as many as fit below that. `auto-fit` with a `minmax` track
+   means no breakpoint has to be declared and a row of two or four cards works
+   as well as a row of three. */
+.o-grid {
+  display: grid;
+  gap: calc(var(--o-space) * 2);
+}
+.o-grid--3 {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+}
+
 /* `.o-hide-mobile` deliberately sets no display of its own, so it can be put
    on a flex row, an inline badge or a block alike; it only takes the element
    out below 640 px. `.o-show-mobile` is the mirror image. */

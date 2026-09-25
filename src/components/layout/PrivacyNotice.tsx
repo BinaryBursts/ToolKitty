@@ -46,7 +46,7 @@ export function PrivacyNotice({ className }: { className?: string }) {
         <span className="o-strong">
           Everything you type here stays in your browser.
         </span>{" "}
-        This tool runs on your device: nothing you enter is sent to a server,
+        This tool runs on your device: what you type is never sent to a server,
         and nothing is remembered once you leave the page.{" "}
         <Link href="/privacy">Read the privacy policy</Link>
       </p>
