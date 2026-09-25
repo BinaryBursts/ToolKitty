@@ -27,17 +27,13 @@ export default function HomePage() {
       <p className="o-small o-muted">
         The site shell is in place; the first tools are on their way.
       </p>
-      <p className="text-sm text-zinc-500">
-        The site shell and the first tools are on their way.
-      </p>
-      <p className="text-sm text-zinc-500">
+      <p className="o-small o-muted">
         Registered so far:{" "}
         {getAllTools()
           .map((tool) => tool.name)
           .join(", ")}
         .
       </p>
-    </main>
     </Container>
   );
 }
