@@ -69,32 +69,34 @@ function LockIcon() {
 
 /**
  * The "404" mark the approved screen draws beside the message. Decorative
- * only: it is `aria-hidden`, and every colour is a theme variable so it
- * follows the light and dark schemes with the rest of the page.
+ * only: it is `aria-hidden`, and every colour comes from a theme variable —
+ * `--t-notfound-ink` is swapped by the dark scheme — so it follows the
+ * system's colour scheme with the rest of the page and sets no colour of its
+ * own here.
  */
 function NotFoundMark() {
   return (
-    <div
-      aria-hidden="true"
-      style={{ display: "flex", justifyContent: "center" }}
-    >
-      <svg
-        viewBox="0 0 260 200"
-        role="presentation"
-        focusable="false"
-        style={{ width: "100%", maxWidth: 300, height: "auto" }}
-      >
+    <div aria-hidden="true" className="t-notfound__art">
+      <svg viewBox="0 0 260 200" role="presentation" focusable="false">
         <defs>
           <linearGradient id="tk-404" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="var(--o-primary)" stopOpacity=".92" />
-            <stop offset="1" stopColor="var(--o-primary)" stopOpacity=".55" />
+            <stop
+              offset="0"
+              stopColor="var(--t-notfound-ink)"
+              stopOpacity=".92"
+            />
+            <stop
+              offset="1"
+              stopColor="var(--t-notfound-ink)"
+              stopOpacity=".55"
+            />
           </linearGradient>
         </defs>
         <circle
           cx="130"
           cy="100"
           r="92"
-          fill="var(--o-primary)"
+          fill="var(--t-notfound-ink)"
           opacity=".12"
         />
         <circle cx="196" cy="46" r="14" fill="var(--o-accent)" opacity=".55" />
@@ -113,7 +115,7 @@ function NotFoundMark() {
         <path
           d="M34 168 C 92 190, 168 190, 226 168"
           fill="none"
-          stroke="var(--o-primary)"
+          stroke="var(--t-notfound-ink)"
           strokeOpacity=".35"
           strokeWidth="3"
           strokeLinecap="round"
@@ -196,7 +198,10 @@ export default function NotFound() {
             <h2 className="o-h2" style={{ margin: 0 }}>
               Try one of the tools
             </h2>
-            <p className="o-text o-muted" style={{ margin: 0, maxWidth: "60ch" }}>
+            <p
+              className="o-text o-muted"
+              style={{ margin: 0, maxWidth: "60ch" }}
+            >
               Every tool runs entirely on your device and opens in a clean
               state.
             </p>

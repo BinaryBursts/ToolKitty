@@ -1145,6 +1145,20 @@ a {
   min-height: 110px;
 }
 
+/* The decorative "404" mark on the not-found page. It is drawn in the brand
+   green, which is dark enough to vanish against the dark card, so the scheme
+   swaps the ink through this variable rather than the shape (TKT-7). */
+.t-notfound__art {
+  display: flex;
+  justify-content: center;
+  --t-notfound-ink: var(--o-primary);
+}
+.t-notfound__art svg {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+}
+
 /* --------------------------------------------------------------------------
    11b. UI kit support
    --------------------------------------------------------------------------
@@ -1446,6 +1460,11 @@ a {
   }
   .t-privacy a {
     color: #e8785a;
+  }
+  /* The same mint the dark scheme gives headings and links, so the mark reads
+     against the dark card instead of sinking into it. */
+  .t-notfound__art {
+    --t-notfound-ink: #8fbdaa;
   }
   .o-input,
   .o-select,

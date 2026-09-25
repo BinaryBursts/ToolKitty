@@ -52,9 +52,9 @@ describe("NotFound", () => {
 
     // Not just the primary button: the page must offer a route home even to a
     // visitor who has read past it.
-    expect(renderedHrefs().filter((href) => href === "/").length).toBeGreaterThan(
-      1,
-    );
+    expect(
+      renderedHrefs().filter((href) => href === "/").length,
+    ).toBeGreaterThan(1);
   });
 
   it("links to every registered tool, taken from the registry", () => {
@@ -80,10 +80,9 @@ describe("NotFound", () => {
   it("offers the ways on the approved screen draws — suggest a tool, privacy policy", () => {
     render(<NotFound />);
 
-    expect(screen.getByRole("link", { name: "Suggest a tool" })).toHaveAttribute(
-      "href",
-      "/about",
-    );
+    expect(
+      screen.getByRole("link", { name: "Suggest a tool" }),
+    ).toHaveAttribute("href", "/about");
     expect(
       screen.getByRole("link", { name: "Read the privacy policy" }),
     ).toHaveAttribute("href", "/privacy");
