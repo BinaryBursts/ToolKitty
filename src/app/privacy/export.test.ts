@@ -1,9 +1,13 @@
-import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import { createRequire } from "node:module";
+import { existsSync } from "node:fs";
 import { join } from "node:path";
 
 import { beforeAll, describe, expect, it } from "vitest";
+
+import {
+  OUT_DIR as outDir,
+  readExported,
+  runStaticExport,
+} from "@/test/staticExport";
 
 /**
  * The slow one: it runs the real static export and reads the files that come
@@ -12,44 +16,18 @@ import { beforeAll, describe, expect, it } from "vitest";
  * Rendering the component in jsdom proves the copy is right; only the build
  * proves the route is actually written to disk, which is the whole of what the
  * host serves. The build is run here rather than assumed, so the check cannot
- * pass against a stale `out/` left over from an earlier run.
- *
- * Next is invoked through `node` and the resolved CLI entry point rather than
- * `npm run build`, so the test does not depend on how npm shims a binary on
- * the machine running it, and the build's own output is surfaced when it
- * fails — a silent non-zero exit here would look like a missing page.
+ * pass against a stale `out/` left over from an earlier run. How the build is
+ * run — and how it waits for a build another test file is already running —
+ * lives in `src/test/staticExport.ts`.
  */
-
-const projectRoot = process.cwd();
-const outDir = join(projectRoot, "out");
-const nextCli = createRequire(import.meta.url).resolve("next/dist/bin/next");
-
-const readExported = (file: string): string => {
-  const path = join(outDir, file);
-
-  return existsSync(path) ? readFileSync(path, "utf8") : "";
-};
 
 let privacyHtml = "";
 let homeHtml = "";
 let notFoundHtml = "";
 
 describe("the static export", () => {
-  beforeAll(() => {
-    try {
-      execFileSync(process.execPath, [nextCli, "build"], {
-        cwd: projectRoot,
-        stdio: "pipe",
-        encoding: "utf8",
-      });
-    } catch (error) {
-      const { stdout = "", stderr = "" } = error as {
-        stdout?: string;
-        stderr?: string;
-      };
-
-      throw new Error(`next build failed:\n${stdout}\n${stderr}`);
-    }
+  beforeAll(async () => {
+    await runStaticExport();
 
     privacyHtml = readExported("privacy.html");
     homeHtml = readExported("index.html");

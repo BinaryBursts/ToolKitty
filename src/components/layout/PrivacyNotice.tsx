@@ -33,7 +33,8 @@ function LockIcon() {
  * advertising, both of which set cookies). Saying only the first half would
  * read as a promise the third-party scripts break.
  */
-const NOTICE_CLAIM = "Everything you type into this tool stays in your browser.";
+const NOTICE_CLAIM =
+  "Everything you type into this tool stays in your browser.";
 const NOTICE_DETAIL =
   "It is worked out on your own device and is never sent to a server — no " +
   "uploads, no accounts, nothing stored. The site itself does use anonymous " +
