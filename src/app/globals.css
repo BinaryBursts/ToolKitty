@@ -47,7 +47,10 @@
   --o-font-mono: var(--font-dm-mono), ui-monospace, monospace;
 
   /* Focus ring, tuned per scheme so it stays visible against both. */
-  --o-focus: rgba(31, 93, 76, 0.55);
+  /* 0.75 rather than the 0.55 the shell shipped with: at 0.55 the ring
+     measured 2.5:1 against the parchment surfaces, under the 3:1 a focus
+     indicator needs. At 0.75 it is 3.75:1 and still not a hard outline. */
+  --o-focus: rgba(31, 93, 76, 0.75);
 
   /* Tell the user agent both schemes are supported, so form controls,
      scrollbars and the canvas follow the system setting too. */
@@ -513,10 +516,22 @@ a {
   min-height: 54px;
   font-size: 1.06rem;
 }
+/* The design drew the small button 38 px tall; it is 44 here so that even the
+   smallest button in the kit meets the 44 px touch target the UI kit holds
+   itself to (TKT-4). The padding and type size are the design's. */
 .o-btn--sm {
   padding: 8px 14px;
-  min-height: 38px;
+  min-height: 44px;
   font-size: 0.86rem;
+}
+
+/* A disabled button must look disabled, not merely be announced as one — the
+   password generator greys out Generate when no character type is left on. */
+.o-btn:disabled,
+.o-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
 }
 .o-btn--icon {
   width: 46px;
@@ -565,10 +580,12 @@ a {
     inset 0 3px 7px rgba(30, 36, 32, 0.1),
     inset 0 0 0 1px #e6dcc8;
 }
+/* The ring is the shared `--o-focus`, which is tuned per scheme: the design's
+   fixed rgba(31,93,76,.35) all but disappeared against a dark field. */
 .o-input:focus,
 .o-select:focus,
 .o-textarea:focus {
-  outline: 3px solid rgba(31, 93, 76, 0.35);
+  outline: 3px solid var(--o-focus);
   outline-offset: 2px;
   background: #fffdfa;
 }
@@ -812,7 +829,7 @@ a {
   box-shadow: 0 6px 12px -6px rgba(31, 93, 76, 0.85);
 }
 .t-seg__btn:focus-visible {
-  outline: 3px solid rgba(31, 93, 76, 0.45);
+  outline: 3px solid var(--o-focus);
   outline-offset: 2px;
 }
 
@@ -872,11 +889,14 @@ a {
     rgba(216, 238, 226, 0) 70%
   );
 }
+/* Darkened from the design's #4E7C6E, which measured 4.4:1 against the
+   readout's near-white panel — just under the 4.5:1 this kit holds itself to
+   at 12–17 px. Same hue, same feel, now 5.6:1. */
 .t-readout__label {
   font-size: 0.78rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #4e7c6e;
+  color: #3f6b5d;
   font-weight: 700;
 }
 .t-readout__value {
@@ -894,7 +914,7 @@ a {
   font-family: var(--o-font-heading);
   font-size: 1.05rem;
   font-weight: 600;
-  color: #4e7c6e;
+  color: #3f6b5d;
   position: relative;
   z-index: 1;
 }
@@ -1004,6 +1024,124 @@ a {
 }
 
 /* --------------------------------------------------------------------------
+   11b. UI kit support
+   --------------------------------------------------------------------------
+   The few pieces the shared components need that the approved design drew with
+   inline styles: the slider, the layout inside a readout, the stacked segmented
+   control and the copy button's confirmation. Everything here is built from the
+   tokens and the design's own palette — no component file sets a colour.
+   -------------------------------------------------------------------------- */
+
+/* Visible only to assistive technology: a label whose purpose is obvious on
+   screen but still has to be announced. */
+.o-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Slider — the password generator's length control. `accent-color` is what
+   makes the track and thumb follow the scheme, and the 44 px height is the
+   touch target. */
+.t-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.t-slider__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.t-range {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  accent-color: var(--o-primary);
+}
+.t-range:focus-visible {
+  outline: 3px solid var(--o-focus);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+.t-slider__value {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 1.9rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--o-text);
+  min-width: 2.5ch;
+  text-align: right;
+}
+.t-slider__marks {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Segmented control, stacked — the password generator's character types. */
+.t-seg--stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  border-radius: 22px;
+}
+.t-seg--stack .t-seg__btn {
+  width: 100%;
+  text-align: left;
+  justify-content: space-between;
+}
+.t-seg__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.t-seg__btn:disabled:hover {
+  background: transparent;
+}
+
+/* Readout interior: the value column must be allowed to shrink, or a long
+   result pushes the card sideways at 320 px instead of wrapping inside it. */
+.t-readout__row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.t-readout__main {
+  min-width: 0;
+  max-width: 100%;
+}
+.t-readout__actions {
+  flex: none;
+}
+
+/* Copy button and its inline confirmation. */
+.t-copybtn {
+  align-items: center;
+  gap: 12px;
+}
+.t-copybtn__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+/* --------------------------------------------------------------------------
    12. Narrow screens — the shell stays usable from 320 px
    -------------------------------------------------------------------------- */
 
@@ -1037,6 +1175,21 @@ a {
   }
   .o-footer {
     padding: 22px 0;
+  }
+  /* The kit at 320 px: the slider's number and the readout's actions have to
+     give way rather than push their card sideways. */
+  .t-slider__value {
+    font-size: 1.5rem;
+  }
+  .t-readout__row {
+    align-items: flex-start;
+  }
+  .t-readout__actions,
+  .t-copybtn {
+    width: 100%;
+  }
+  .t-copybtn .o-btn {
+    flex: 1 1 auto;
   }
 }
 
@@ -1220,5 +1373,57 @@ a {
   }
   .o-footer {
     border-top-color: #26332d;
+  }
+
+  /* --- UI kit in the dark scheme ---------------------------------------
+     The design left these surfaces light, which is invisible until a
+     component actually uses them: an `.o-alert` kept its parchment
+     background while the inherited text turned near-white (1.1:1), and the
+     field error red measured 3.5:1 on a dark card. Each is re-stated here in
+     the dark palette the rest of the file already uses. */
+  .o-alert {
+    background: #1d2823;
+    color: var(--o-text);
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-alert--danger {
+    background: #2e1f1b;
+    color: #f7ddd4;
+    box-shadow: none;
+  }
+  .o-alert--success {
+    background: #17302a;
+    color: #cdeadd;
+  }
+  .o-alert--warning {
+    background: #2d2413;
+    color: #f2dcaa;
+  }
+  .o-empty {
+    background: #141d1a;
+    color: var(--o-muted);
+    box-shadow: inset 0 0 0 1px #26332d;
+  }
+  .o-badge {
+    background: #1d2823;
+    color: #cdd8d1;
+  }
+  .o-chip {
+    background: #16201c;
+    color: var(--o-text);
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-error {
+    color: #ff9b86;
+  }
+  .t-range {
+    accent-color: #8fbdaa;
+  }
+  .t-swap {
+    background: #1d2823;
+    color: #b8e8d0;
+    box-shadow:
+      0 10px 18px -12px #000,
+      inset 0 0 0 1px #2c3a34;
   }
 }
