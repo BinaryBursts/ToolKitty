@@ -80,6 +80,21 @@ Tailwind CSS v4. There is no `tailwind.config.js` — v4 is configured from CSS,
 in the `@theme` block of [`src/app/globals.css`](src/app/globals.css). Prettier
 sorts Tailwind class names automatically.
 
+### The shared UI kit
+
+Tool screens are assembled from [`src/components/ui`](src/components/ui) —
+`Field`, `TextInput`, `Select`, `Textarea`, `Slider`, `Button`,
+`SegmentedSelect`, `Readout`, `SwapButton`, `CopyButton`, `InlineMessage` —
+rather than styled by hand. Each maps onto classes from the approved theme in
+`globals.css`, so **no component file sets a colour of its own**: light and dark,
+focus rings and 44 px touch targets are decided in one place.
+
+Run `npm run dev` and open <http://localhost:3000/kitchen-sink> to see every
+component in every state. That page is an internal review aid: it ships in the
+static export because there is no server to gate it behind, but it is `noindex`,
+unlinked from the site, and **must be left out of the sitemap** when the sitemap
+is added.
+
 ## Deployment
 
 The repository builds on Vercel and is served as static files over HTTPS. The

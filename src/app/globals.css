@@ -1,28 +1,1429 @@
 @import "tailwindcss";
 
-/*
- * Baseline tokens only. The approved ToolKitty theme — colour ramp, type scale
- * and self-hosted fonts (Outfit, Manrope, DM Mono via next/font) — is added in
- * the site shell ticket.
- */
+/* ==========================================================================
+   ToolKitty theme
+   --------------------------------------------------------------------------
+   The approved design's tokens and theme stylesheet, ported verbatim where it
+   made sense and folded together with the structural defaults the design kit
+   supplied (display/flex rules the theme layered its look on top of).
+
+   Two rules hold this file together and must not be broken:
+
+   1. Light and dark come from `prefers-color-scheme` and nothing else. There
+      is no class toggle, no inline theme script and no stored preference, so
+      the very first paint is already the right scheme (REQ-3).
+   2. Fonts are self-hosted by `next/font` and referenced here through the
+      `--font-outfit` / `--font-manrope` / `--font-dm-mono` variables the root
+      layout sets. No `@import` or `@font-face` may point at a third-party
+      origin.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Design tokens (light)
+   -------------------------------------------------------------------------- */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Colour ramp — approved design tokens. */
+  --o-primary: #1f5d4c;
+  --o-on-primary: #ffffff;
+  --o-bg: #f7f2e9;
+  --o-surface: #fffdfa;
+  --o-text: #1e2420;
+  --o-muted: #5f6b64;
+  --o-border: #e4dbc9;
+  --o-accent: #e8785a;
+  --o-success: #2e7d5b;
+  --o-warning: #b47614;
+  --o-danger: #c0432c;
+
+  /* Shape and rhythm. */
+  --o-radius: 20px;
+  --o-space: 8px;
+
+  /* Type. The `--font-*` variables come from next/font in the root layout;
+     the fallbacks keep the page readable before the webfont resolves. */
+  --o-font-heading: var(--font-outfit), system-ui, sans-serif;
+  --o-font-body: var(--font-manrope), system-ui, sans-serif;
+  --o-font-mono: var(--font-dm-mono), ui-monospace, monospace;
+
+  /* Focus ring, tuned per scheme so it stays visible against both. */
+  /* 0.75 rather than the 0.55 the shell shipped with: at 0.55 the ring
+     measured 2.5:1 against the parchment surfaces, under the 3:1 a focus
+     indicator needs. At 0.75 it is 3.75:1 and still not a hard outline. */
+  --o-focus: rgba(31, 93, 76, 0.75);
+
+  /* Tell the user agent both schemes are supported, so form controls,
+     scrollbars and the canvas follow the system setting too. */
+  color-scheme: light dark;
 }
+
+/* --------------------------------------------------------------------------
+   2. Design tokens (dark) — system setting only, never a class or a script
+   -------------------------------------------------------------------------- */
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --o-bg: #101714;
+    --o-surface: #16201c;
+    --o-text: #eaf2ed;
+    --o-muted: #9eada4;
+    --o-border: #26332d;
+    --o-focus: rgba(184, 232, 208, 0.65);
   }
 }
 
+/* Expose the tokens to Tailwind utilities as well, so utility classes and the
+   theme classes below cannot drift apart. */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--o-bg);
+  --color-foreground: var(--o-text);
+  --color-surface: var(--o-surface);
+  --color-primary: var(--o-primary);
+  --color-muted: var(--o-muted);
+  --color-border-subtle: var(--o-border);
+  --font-sans: var(--o-font-body);
+  --font-mono: var(--o-font-mono);
+}
+
+/* --------------------------------------------------------------------------
+   3. Page canvas and typography
+   -------------------------------------------------------------------------- */
+
+html {
+  min-height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  margin: 0;
+  font-family: var(--o-font-body);
+  color: var(--o-text);
+  line-height: 1.6;
+  background:
+    radial-gradient(
+      860px 460px at 8% -12%,
+      #fff6e4 0%,
+      rgba(255, 246, 228, 0) 62%
+    ),
+    radial-gradient(
+      720px 420px at 96% 2%,
+      #e6f1ea 0%,
+      rgba(230, 241, 234, 0) 64%
+    ),
+    var(--o-bg);
+}
+
+h1,
+h2,
+h3,
+.o-display,
+.o-h1,
+.o-h2,
+.o-h3 {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  letter-spacing: -0.025em;
+  line-height: 1.08;
+  color: var(--o-text);
+}
+
+.o-display {
+  font-size: clamp(2.5rem, 6.4vw, 4rem);
+}
+.o-h1 {
+  font-size: clamp(2rem, 4.4vw, 2.9rem);
+}
+.o-h2 {
+  font-size: clamp(1.45rem, 2.8vw, 1.9rem);
+}
+.o-h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+.o-lead {
+  font-size: clamp(1.02rem, 1.5vw, 1.18rem);
+  color: var(--o-muted);
+  max-width: 60ch;
+}
+.o-text {
+  font-size: 1rem;
+}
+.o-small {
+  font-size: 0.85rem;
+}
+.o-muted {
+  color: var(--o-muted);
+}
+.o-strong {
+  font-weight: 700;
+}
+.o-eyebrow {
+  font-family: var(--o-font-heading);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #1f5d4c;
+}
+.o-mono {
+  font-family: var(--o-font-mono);
+}
+
+a {
+  color: #1f5d4c;
+  text-underline-offset: 3px;
+}
+
+/* One focus ring for the whole site, visible against both schemes (REQ-3).
+   Only the outline is set here — never the element's own shape. */
+:focus-visible {
+  outline: 3px solid var(--o-focus);
+  outline-offset: 2px;
+}
+
+/* --------------------------------------------------------------------------
+   4. Layout helpers
+   -------------------------------------------------------------------------- */
+
+/* Page width and gutters. Rendered by <Container>; every page section uses it
+   so the whole site lines up and nothing overflows at 320 px. */
+.o-container {
+  width: 100%;
+  max-width: 1120px;
+  margin-inline: auto;
+  padding-inline: clamp(16px, 4vw, 32px);
+}
+
+.o-section {
+  padding-block: clamp(28px, 5vw, 56px);
+}
+
+.o-stack {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--o-space) * 2);
+}
+.o-stack--tight {
+  display: flex;
+  flex-direction: column;
+  gap: var(--o-space);
+}
+.o-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--o-space);
+}
+.o-spread {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--o-space) * 2);
+}
+.o-grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* `.o-hide-mobile` deliberately sets no display of its own, so it can be put
+   on a flex row, an inline badge or a block alike; it only takes the element
+   out below 640 px. `.o-show-mobile` is the mirror image. */
+.o-show-mobile {
+  display: none;
+}
+
+.o-divider {
+  border: 0;
+  border-top: 1px solid #ede4d4;
+  width: 100%;
+  margin: 0;
+}
+
+.o-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+
+/* The skip link: off-screen until focused, then a real, visible target. */
+.o-skip {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 50;
+  transform: translateY(-160%);
+  transition: transform 0.16s ease;
+  background: var(--o-surface);
+  color: var(--o-text);
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  text-decoration: none;
+  padding: 12px 20px;
+  border-radius: 999px;
+  box-shadow:
+    inset 0 0 0 1px var(--o-border),
+    0 12px 22px -14px rgba(30, 36, 32, 0.8);
+}
+.o-skip:focus-visible,
+.o-skip:focus {
+  transform: translateY(0);
+}
+
+/* Main content area: takes the space between header and footer. */
+.o-main {
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   5. Header
+   -------------------------------------------------------------------------- */
+
+.o-topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  width: calc(100% - 28px);
+  max-width: 1120px;
+  margin: 14px auto;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 26px;
+  background: rgba(255, 253, 250, 0.86);
+  backdrop-filter: blur(10px);
+  box-shadow:
+    0 18px 30px -24px rgba(30, 36, 32, 0.55),
+    inset 0 0 0 1px #efe6d6,
+    inset 0 1px 0 #fff;
+}
+
+.o-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 1.18rem;
+  letter-spacing: -0.02em;
+  color: var(--o-text);
+  text-decoration: none;
+}
+
+.o-brand__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: 16px;
+  background: linear-gradient(160deg, #2c7a63, #1f5d4c);
+  color: #fff;
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  box-shadow:
+    0 8px 14px -8px rgba(31, 93, 76, 0.9),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.o-nav--row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.o-nav--row .o-nav__item {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 9px 16px;
+  min-height: 44px;
+  font-weight: 600;
+  font-size: 0.94rem;
+  color: var(--o-muted);
+  background: transparent;
+  border: 0;
+  text-decoration: none;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease;
+}
+.o-nav--row .o-nav__item:hover {
+  background: #f1eadc;
+  color: var(--o-text);
+}
+.o-nav--row .o-nav__item--active {
+  background: #d8eee2;
+  color: #194b3e;
+}
+
+/* Compact menu: a native disclosure, so it opens and closes from the keyboard
+   with no JavaScript and nothing written to storage. */
+.o-menu {
+  position: relative;
+}
+.o-menu__toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  min-height: 46px;
+  border-radius: 999px;
+  cursor: pointer;
+  list-style: none;
+  color: var(--o-text);
+  background: #f1eadc;
+  box-shadow:
+    inset 0 0 0 1px #e6dbc7,
+    0 2px 0 #e3d9c4;
+}
+.o-menu__toggle::-webkit-details-marker {
+  display: none;
+}
+.o-menu[open] .o-menu__toggle {
+  background: #ede4d2;
+}
+.o-menu__panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  position: absolute;
+  right: 0;
+  top: calc(100% + 10px);
+  z-index: 40;
+  min-width: 180px;
+  padding: 8px;
+  border-radius: 20px;
+  background: var(--o-surface);
+  box-shadow:
+    0 26px 40px -30px rgba(30, 36, 32, 0.7),
+    inset 0 0 0 1px #efe6d6;
+}
+.o-menu__panel .o-nav__item {
+  justify-content: flex-start;
+}
+
+/* --------------------------------------------------------------------------
+   6. Surfaces
+   -------------------------------------------------------------------------- */
+
+.o-card {
+  background: var(--o-surface);
+  border: 0;
+  border-radius: 26px;
+  padding: 22px;
+  box-shadow:
+    0 26px 40px -34px rgba(30, 36, 32, 0.5),
+    inset 0 0 0 1px #efe6d6,
+    inset 0 1px 0 #fff;
+}
+.o-card--flat {
+  box-shadow: inset 0 0 0 1px #efe6d6;
+  background: transparent;
+}
+.o-card--tight {
+  padding: 0;
+  overflow: hidden;
+}
+.o-card__header {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding-bottom: 10px;
+  margin-bottom: 6px;
+  border-bottom: 1px solid #f0e8d9;
+}
+
+/* --------------------------------------------------------------------------
+   7. Buttons
+   -------------------------------------------------------------------------- */
+
+.o-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 0.98rem;
+  border-radius: 999px;
+  padding: 12px 22px;
+  min-height: 46px;
+  border: 0;
+  background: #f1eadc;
+  color: var(--o-text);
+  box-shadow:
+    inset 0 0 0 1px #e6dbc7,
+    0 2px 0 #e3d9c4;
+  transition:
+    transform 0.14s ease,
+    box-shadow 0.14s ease,
+    background 0.18s ease;
+}
+.o-btn:hover {
+  background: #ede4d2;
+}
+.o-btn:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 1px #e6dbc7;
+}
+.o-btn--primary {
+  background: linear-gradient(175deg, #2a7360, #1f5d4c);
+  color: #fff;
+  box-shadow:
+    0 12px 20px -12px rgba(31, 93, 76, 0.95),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28),
+    0 3px 0 #17473a;
+}
+.o-btn--primary:hover {
+  background: linear-gradient(175deg, #2f7e69, #235f50);
+}
+.o-btn--primary:active {
+  transform: translateY(3px);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+.o-btn--secondary {
+  background: #fffdfa;
+  box-shadow:
+    inset 0 0 0 1px #dcd2bd,
+    0 2px 0 #e8dfcb;
+}
+.o-btn--ghost {
+  background: transparent;
+  box-shadow: none;
+  color: var(--o-muted);
+}
+.o-btn--ghost:hover {
+  background: #f1eadc;
+  color: var(--o-text);
+}
+.o-btn--danger {
+  background: #c0432c;
+  color: #fff;
+  box-shadow: 0 3px 0 #9a3421;
+}
+.o-btn--lg {
+  padding: 15px 30px;
+  min-height: 54px;
+  font-size: 1.06rem;
+}
+/* The design drew the small button 38 px tall; it is 44 here so that even the
+   smallest button in the kit meets the 44 px touch target the UI kit holds
+   itself to (TKT-4). The padding and type size are the design's. */
+.o-btn--sm {
+  padding: 8px 14px;
+  min-height: 44px;
+  font-size: 0.86rem;
+}
+
+/* A disabled button must look disabled, not merely be announced as one — the
+   password generator greys out Generate when no character type is left on. */
+.o-btn:disabled,
+.o-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+.o-btn--icon {
+  width: 46px;
+  padding: 0;
+}
+.o-btn--block {
+  width: 100%;
+}
+
+/* --------------------------------------------------------------------------
+   8. Fields
+   -------------------------------------------------------------------------- */
+
+.o-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.o-label {
+  font-weight: 700;
+  font-size: 0.86rem;
+  letter-spacing: 0.01em;
+  color: var(--o-text);
+}
+.o-help {
+  color: var(--o-muted);
+  font-size: 0.83rem;
+}
+.o-error {
+  color: #c0432c;
+  font-weight: 600;
+  font-size: 0.86rem;
+}
+.o-input,
+.o-select,
+.o-textarea {
+  background: #f4efe4;
+  border: 0;
+  border-radius: 18px;
+  padding: 13px 16px;
+  min-height: 48px;
+  font-family: var(--o-font-body);
+  font-size: 1rem;
+  color: var(--o-text);
+  box-shadow:
+    inset 0 3px 7px rgba(30, 36, 32, 0.1),
+    inset 0 0 0 1px #e6dcc8;
+}
+/* The ring is the shared `--o-focus`, which is tuned per scheme: the design's
+   fixed rgba(31,93,76,.35) all but disappeared against a dark field. */
+.o-input:focus,
+.o-select:focus,
+.o-textarea:focus {
+  outline: 3px solid var(--o-focus);
+  outline-offset: 2px;
+  background: #fffdfa;
+}
+.o-input--error {
+  box-shadow: inset 0 0 0 2px #c0432c;
+}
+.o-search .o-input {
+  padding-left: 42px;
+}
+
+/* --------------------------------------------------------------------------
+   9. Badges, chips, alerts, empty states
+   -------------------------------------------------------------------------- */
+
+.o-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-weight: 700;
+  font-size: 0.78rem;
+  background: #f1eadc;
+  color: #4b554e;
+  border: 0;
+  letter-spacing: 0.01em;
+}
+.o-badge--primary {
+  background: #d8eee2;
+  color: #194b3e;
+}
+.o-badge--success {
+  background: #d6efdf;
+  color: #1d5c3f;
+}
+.o-badge--warning {
+  background: #f7e7c6;
+  color: #7a5209;
+}
+.o-badge--danger {
+  background: #f8dcd5;
+  color: #94301d;
+}
+
+.o-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 9px 15px;
+  background: #fffdfa;
+  box-shadow: inset 0 0 0 1px #e6dcc8;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+.o-chip--active {
+  background: #1f5d4c;
+  color: #fff;
+  box-shadow: none;
+}
+
+.o-alert {
+  border-radius: 20px;
+  border: 0;
+  padding: 16px 18px;
+  background: #f1eadc;
+  box-shadow: inset 0 0 0 1px #e6dcc8;
+}
+.o-alert--success {
+  background: #d8eee2;
+  color: #194b3e;
+  box-shadow: none;
+}
+.o-alert--warning {
+  background: #f9eed6;
+  color: #7a5209;
+  box-shadow: none;
+}
+.o-alert--danger {
+  background: #f9e1da;
+  color: #94301d;
+  box-shadow: none;
+}
+
+.o-empty {
+  border-radius: 24px;
+  background: #fbf6ec;
+  box-shadow: inset 0 0 0 1px #ede4d4;
+  padding: 34px;
+  color: var(--o-muted);
+}
+
+.o-avatar {
+  border-radius: 16px;
+  background: #d8eee2;
+  color: #194b3e;
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+}
+
+.o-table th {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  color: var(--o-muted);
+  background: #fbf6ec;
+  border: 0;
+}
+.o-table td {
+  border-top: 1px solid #f0e8d9;
+}
+
+.o-stat__label {
+  font-size: 0.8rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--o-muted);
+}
+.o-stat__value {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 2.1rem;
+  letter-spacing: -0.03em;
+  color: #1f5d4c;
+}
+
+/* --------------------------------------------------------------------------
+   10. Footer
+   -------------------------------------------------------------------------- */
+
+.o-footer {
+  background: transparent;
+  border-top: 1px solid #eae0ce;
+  color: var(--o-muted);
+  padding: 26px 16px;
+  margin-top: auto;
+}
+
+/* --------------------------------------------------------------------------
+   11. Signature pieces (t-)
+   -------------------------------------------------------------------------- */
+
+.t-device {
+  position: relative;
+  background: linear-gradient(180deg, #ffffff 0%, #fdf8f0 100%);
+  border-radius: 36px;
+  padding: clamp(18px, 3vw, 34px);
+  padding-top: clamp(28px, 4vw, 42px);
+  box-shadow:
+    0 46px 64px -44px rgba(30, 36, 32, 0.55),
+    0 4px 0 #efe5d3,
+    inset 0 0 0 1px #f0e7d7,
+    inset 0 2px 0 #fff;
+}
+.t-device::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 76px;
+  height: 6px;
+  border-radius: 999px;
+  background: #ebe1ce;
+}
+.t-device__head {
+  margin-bottom: 18px;
+}
+
+.t-block {
+  background: #fbf6ec;
+  border-radius: 26px;
+  padding: 18px;
+  box-shadow: inset 0 0 0 1px #f0e7d7;
+}
+
+.t-recess {
+  background: #f2ecdf;
+  border-radius: 22px;
+  padding: 8px 14px;
+  box-shadow:
+    inset 0 4px 9px rgba(30, 36, 32, 0.13),
+    inset 0 0 0 1px #e7ddc9,
+    0 1px 0 #fff;
+}
+.t-recess .o-input {
+  background: transparent;
+  box-shadow: none;
+  font-family: var(--o-font-heading);
+  font-size: clamp(1.6rem, 3.4vw, 2.2rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  padding-left: 4px;
+}
+.t-unitcap {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  color: var(--o-muted);
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+.t-seg {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  background: #f2ecdf;
+  border-radius: 999px;
+  padding: 6px;
+  box-shadow:
+    inset 0 2px 5px rgba(30, 36, 32, 0.08),
+    inset 0 0 0 1px #e7ddc9;
+}
+.t-seg__btn {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-family: var(--o-font-body);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: #5f6b64;
+  border-radius: 999px;
+  padding: 10px 15px;
+  min-height: 44px;
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+.t-seg__btn:hover {
+  background: #ede5d4;
+  color: var(--o-text);
+}
+.t-seg__btn--on {
+  background: #fffdfa;
+  color: #1f5d4c;
+  box-shadow:
+    0 4px 8px -4px rgba(31, 93, 76, 0.5),
+    inset 0 0 0 1px rgba(31, 93, 76, 0.16);
+}
+.t-seg--to .t-seg__btn--on {
+  background: #1f5d4c;
+  color: #fff;
+  box-shadow: 0 6px 12px -6px rgba(31, 93, 76, 0.85);
+}
+.t-seg__btn:focus-visible {
+  outline: 3px solid var(--o-focus);
+  outline-offset: 2px;
+}
+
+.t-swapwrap {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.t-swapline {
+  flex: 1;
+  height: 1px;
+  background: #ede4d4;
+}
+.t-swap {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 0;
+  cursor: pointer;
+  background: #fffdfa;
+  color: #1f5d4c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 10px 18px -12px rgba(30, 36, 32, 0.8),
+    inset 0 0 0 1px #e6dcc8,
+    0 3px 0 #efe5d3;
+  transition: transform 0.18s ease;
+}
+.t-swap:hover {
+  transform: rotate(180deg);
+}
+
+.t-readout {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ffffff 0%, #eff9f3 100%);
+  border-radius: 28px;
+  padding: 24px 26px;
+  box-shadow:
+    0 22px 34px -24px rgba(31, 93, 76, 0.55),
+    inset 0 0 0 1px rgba(31, 93, 76, 0.12),
+    inset 0 2px 0 #fff;
+}
+.t-readout::after {
+  content: "";
+  position: absolute;
+  right: -60px;
+  top: -70px;
+  width: 200px;
+  height: 200px;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    rgba(216, 238, 226, 0.9),
+    rgba(216, 238, 226, 0) 70%
+  );
+}
+/* Darkened from the design's #4E7C6E, which measured 4.4:1 against the
+   readout's near-white panel — just under the 4.5:1 this kit holds itself to
+   at 12–17 px. Same hue, same feel, now 5.6:1. */
+.t-readout__label {
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #3f6b5d;
+  font-weight: 700;
+}
+.t-readout__value {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: clamp(2.9rem, 8.4vw, 4.6rem);
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: #1f5d4c;
+  position: relative;
+  z-index: 1;
+  word-break: break-word;
+}
+.t-readout__unit {
+  font-family: var(--o-font-heading);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #3f6b5d;
+  position: relative;
+  z-index: 1;
+}
+
+.t-privacy {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  background: #d8eee2;
+  color: #174539;
+  border-radius: 22px;
+  padding: 14px 18px;
+  box-shadow: inset 0 0 0 1px rgba(31, 93, 76, 0.14);
+  max-width: 70ch;
+}
+.t-privacy a {
+  color: #123a2f;
+  font-weight: 700;
+}
+
+.t-fact {
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: inset 0 0 0 1px rgba(30, 36, 32, 0.06);
+}
+.t-fact--mint {
+  background: #d8eee2;
+}
+.t-fact--sky {
+  background: #dde7f7;
+}
+.t-fact--clay {
+  background: #fbe3db;
+}
+.t-fact__value {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 1.9rem;
+  letter-spacing: -0.03em;
+  color: #1e2420;
+  line-height: 1.1;
+}
+.t-fact__note {
+  font-size: 0.86rem;
+  color: #4a544e;
+}
+
+.t-tool {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  background: var(--o-surface);
+  border-radius: 26px;
+  padding: 20px;
+  box-shadow:
+    0 22px 34px -32px rgba(30, 36, 32, 0.5),
+    inset 0 0 0 1px #efe6d6;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+.t-tool:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 30px 40px -30px rgba(30, 36, 32, 0.55),
+    inset 0 0 0 1px #e4d9c4;
+}
+.t-tool__ico {
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #d8eee2;
+  color: #1f5d4c;
+  margin-bottom: 12px;
+}
+.t-tool__ico--sky {
+  background: #dde7f7;
+  color: #2b4c7e;
+}
+.t-tool__ico--clay {
+  background: #fbe3db;
+  color: #a8462e;
+}
+
+.t-faq {
+  border-top: 1px solid #ede4d4;
+  padding-top: 14px;
+  margin-top: 14px;
+}
+.t-faq__q {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 1.02rem;
+  margin-bottom: 4px;
+}
+
+.t-copy p {
+  max-width: 66ch;
+  color: #3c463f;
+}
+
+.t-reserve {
+  min-height: 110px;
+}
+
+/* --------------------------------------------------------------------------
+   11b. UI kit support
+   --------------------------------------------------------------------------
+   The few pieces the shared components need that the approved design drew with
+   inline styles: the slider, the layout inside a readout, the stacked segmented
+   control and the copy button's confirmation. Everything here is built from the
+   tokens and the design's own palette — no component file sets a colour.
+   -------------------------------------------------------------------------- */
+
+/* Visible only to assistive technology: a label whose purpose is obvious on
+   screen but still has to be announced. */
+.o-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Slider — the password generator's length control. `accent-color` is what
+   makes the track and thumb follow the scheme, and the 44 px height is the
+   touch target. */
+.t-slider {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+}
+.t-slider__row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.t-range {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: block;
+  height: 44px;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  accent-color: var(--o-primary);
+}
+.t-range:focus-visible {
+  outline: 3px solid var(--o-focus);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+.t-slider__value {
+  font-family: var(--o-font-heading);
+  font-weight: 600;
+  font-size: 1.9rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--o-text);
+  min-width: 2.5ch;
+  text-align: right;
+}
+.t-slider__marks {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+/* Segmented control, stacked — the password generator's character types. */
+.t-seg--stack {
+  flex-direction: column;
+  flex-wrap: nowrap;
+  border-radius: 22px;
+}
+.t-seg--stack .t-seg__btn {
+  width: 100%;
+  text-align: left;
+  justify-content: space-between;
+}
+.t-seg__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.t-seg__btn:disabled:hover {
+  background: transparent;
+}
+
+/* Readout interior: the value column must be allowed to shrink, or a long
+   result pushes the card sideways at 320 px instead of wrapping inside it. */
+.t-readout__row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.t-readout__main {
+  min-width: 0;
+  max-width: 100%;
+}
+.t-readout__actions {
+  flex: none;
+}
+
+/* Copy button and its inline confirmation. */
+.t-copybtn {
+  align-items: center;
+  gap: 12px;
+}
+.t-copybtn__status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+}
+
+/* --------------------------------------------------------------------------
+   12. Narrow screens — the shell stays usable from 320 px
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 640px) {
+  .o-topbar {
+    margin: 8px auto;
+    width: calc(100% - 16px);
+    border-radius: 22px;
+    padding: 10px 12px;
+  }
+  .t-device {
+    border-radius: 28px;
+  }
+  .t-seg__btn {
+    padding: 10px 13px;
+    font-size: 0.86rem;
+  }
+  .o-hide-mobile {
+    display: none;
+  }
+  .o-show-mobile {
+    display: flex;
+  }
+  .o-brand {
+    font-size: 1.05rem;
+  }
+  .o-brand__mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 14px;
+  }
+  .o-footer {
+    padding: 22px 0;
+  }
+  /* The kit at 320 px: the slider's number and the readout's actions have to
+     give way rather than push their card sideways. */
+  .t-slider__value {
+    font-size: 1.5rem;
+  }
+  .t-readout__row {
+    align-items: flex-start;
+  }
+  .t-readout__actions,
+  .t-copybtn {
+    width: 100%;
+  }
+  .t-copybtn .o-btn {
+    flex: 1 1 auto;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   13. Reduced motion
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .t-swap:hover {
+    transform: none;
+  }
+  .t-tool:hover {
+    transform: none;
+  }
+  .o-btn,
+  .o-nav--row .o-nav__item,
+  .t-seg__btn,
+  .o-skip {
+    transition: none;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   14. Dark scheme overrides
+   -------------------------------------------------------------------------- */
+
+@media (prefers-color-scheme: dark) {
+  body {
+    background:
+      radial-gradient(
+        820px 440px at 8% -12%,
+        #17241f 0%,
+        rgba(23, 36, 31, 0) 62%
+      ),
+      radial-gradient(
+        700px 400px at 96% 2%,
+        #18241f 0%,
+        rgba(24, 36, 31, 0) 64%
+      ),
+      #101714;
+  }
+  h1,
+  h2,
+  h3,
+  .o-display,
+  .o-h1,
+  .o-h2,
+  .o-h3 {
+    color: #eaf2ed;
+  }
+  a,
+  .o-eyebrow {
+    color: #8fbdaa;
+  }
+  .o-divider {
+    border-top-color: #26332d;
+  }
+  .o-topbar {
+    background: rgba(22, 32, 28, 0.88);
+    box-shadow: inset 0 0 0 1px #26332d;
+  }
+  .o-brand {
+    color: #eaf2ed;
+  }
+  .o-nav--row .o-nav__item:hover {
+    background: #1d2823;
+    color: #eaf2ed;
+  }
+  .o-nav--row .o-nav__item--active {
+    background: #17302a;
+    color: #cdeadd;
+  }
+  .o-menu__toggle {
+    background: #1d2823;
+    color: #eaf2ed;
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-menu[open] .o-menu__toggle {
+    background: #243029;
+  }
+  .o-menu__panel {
+    background: #18221e;
+    box-shadow:
+      0 30px 46px -34px #000,
+      inset 0 0 0 1px #26332d;
+  }
+  .o-skip {
+    background: #18221e;
+    color: #eaf2ed;
+    box-shadow:
+      inset 0 0 0 1px #26332d,
+      0 12px 22px -14px #000;
+  }
+  .o-card,
+  .t-device {
+    background: linear-gradient(180deg, #18221e, #141d1a);
+    box-shadow:
+      0 40px 60px -46px #000,
+      inset 0 0 0 1px #26332d;
+  }
+  .o-card__header {
+    border-bottom-color: #26332d;
+  }
+  .t-block,
+  .t-recess,
+  .t-seg {
+    background: #121a17;
+    box-shadow: inset 0 0 0 1px #26332d;
+  }
+  .t-seg__btn {
+    color: #9eada4;
+  }
+  .t-seg__btn--on {
+    background: #d8eee2;
+    color: #123a2f;
+  }
+  .t-readout {
+    background: linear-gradient(180deg, #1a2622, #152019);
+    box-shadow: inset 0 0 0 1px #2c4a3e;
+  }
+  .t-readout__value {
+    color: #b8e8d0;
+  }
+  .t-readout__label,
+  .t-readout__unit {
+    color: #8fbdaa;
+  }
+  .t-privacy {
+    background: #17302a;
+    color: #cdeadd;
+    box-shadow: inset 0 0 0 1px #2c4a3e;
+  }
+  .t-privacy a {
+    color: #e8785a;
+  }
+  .o-input,
+  .o-select,
+  .o-textarea {
+    background: #121a17;
+    color: #eaf2ed;
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-input:focus,
+  .o-select:focus,
+  .o-textarea:focus {
+    background: #16201c;
+  }
+  .o-btn {
+    background: #1d2823;
+    color: #eaf2ed;
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-btn:hover {
+    background: #243029;
+  }
+  .o-btn--primary {
+    color: #fff;
+  }
+  .t-fact--mint {
+    background: #17302a;
+    color: #dcefe6;
+  }
+  .t-fact--sky {
+    background: #1a2433;
+    color: #dce6f5;
+  }
+  .t-fact--clay {
+    background: #2e1f1b;
+    color: #f7ddd4;
+  }
+  .t-fact__value,
+  .t-copy p,
+  .t-fact__note {
+    color: inherit;
+  }
+  .t-faq {
+    border-top-color: #26332d;
+  }
+  .t-swapline {
+    background: #26332d;
+  }
+  .o-footer {
+    border-top-color: #26332d;
+  }
+
+  /* --- UI kit in the dark scheme ---------------------------------------
+     The design left these surfaces light, which is invisible until a
+     component actually uses them: an `.o-alert` kept its parchment
+     background while the inherited text turned near-white (1.1:1), and the
+     field error red measured 3.5:1 on a dark card. Each is re-stated here in
+     the dark palette the rest of the file already uses. */
+  .o-alert {
+    background: #1d2823;
+    color: var(--o-text);
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-alert--danger {
+    background: #2e1f1b;
+    color: #f7ddd4;
+    box-shadow: none;
+  }
+  .o-alert--success {
+    background: #17302a;
+    color: #cdeadd;
+  }
+  .o-alert--warning {
+    background: #2d2413;
+    color: #f2dcaa;
+  }
+  .o-empty {
+    background: #141d1a;
+    color: var(--o-muted);
+    box-shadow: inset 0 0 0 1px #26332d;
+  }
+  .o-badge {
+    background: #1d2823;
+    color: #cdd8d1;
+  }
+  .o-chip {
+    background: #16201c;
+    color: var(--o-text);
+    box-shadow: inset 0 0 0 1px #2c3a34;
+  }
+  .o-error {
+    color: #ff9b86;
+  }
+  .t-range {
+    accent-color: #8fbdaa;
+  }
+  .t-swap {
+    background: #1d2823;
+    color: #b8e8d0;
+    box-shadow:
+      0 10px 18px -12px #000,
+      inset 0 0 0 1px #2c3a34;
+  }
 }
