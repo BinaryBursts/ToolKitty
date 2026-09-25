@@ -12,6 +12,9 @@
  * Results are always rendered in plain decimal notation — never `1.000e-7` —
  * because a visitor reading a converted weight should not have to read an
  * exponent.
+ *
+ * {@link formatFixed2} is the two-decimal rule on its own, for the converters
+ * that never want the small-value rule — see its own note.
  */
 
 /** Matches a JavaScript exponential literal, e.g. `-1.234e-7` or `1e+21`. */
@@ -46,6 +49,40 @@ function toPlainDecimal(text: string): string {
   return `${sign}${digits.slice(0, pointIndex)}.${digits.slice(pointIndex)}`;
 }
 
+/** Refuse a value that cannot be shown truthfully, naming the caller. */
+function assertFinite(value: number, caller: string): void {
+  if (!Number.isFinite(value)) {
+    throw new RangeError(
+      `${caller} expects a finite number, received ${String(value)}`,
+    );
+  }
+}
+
+/**
+ * Format a value to exactly two decimal places, in plain decimal notation.
+ *
+ * This is the two-decimal half of {@link formatResult}, on its own, for the
+ * converters whose results are always shown to two places whatever their size
+ * — the temperature converter (REQ-6), where the small-value rule below would
+ * be wrong: 0.004 °C is a temperature like any other and reads `0.00`, not
+ * `0.004000`.
+ *
+ * A value that rounds to zero from below comes back as `0.00`, never `-0.00`;
+ * a minus sign in front of a zero result is noise a reader has to explain away.
+ *
+ * @throws RangeError if given `NaN` or an infinity — see {@link formatResult}.
+ */
+export function formatFixed2(value: number): string {
+  assertFinite(value, "formatFixed2");
+
+  const fixed = toPlainDecimal(value.toFixed(2));
+  // `toFixed` gives up and returns exponential notation at 1e21 and above;
+  // once expanded, such a value has no decimal part left to show.
+  const text = fixed.includes(".") ? fixed : `${fixed}.00`;
+
+  return text === "-0.00" ? "0.00" : text;
+}
+
 /**
  * Format a converted value for display.
  *
@@ -56,11 +93,7 @@ function toPlainDecimal(text: string): string {
  *   caller must handle its error case before it formats.
  */
 export function formatResult(value: number): string {
-  if (!Number.isFinite(value)) {
-    throw new RangeError(
-      `formatResult expects a finite number, received ${String(value)}`,
-    );
-  }
+  assertFinite(value, "formatResult");
 
   // `=== 0` covers -0 as well, which the requirement also shows as 0.00.
   if (value === 0) {
@@ -68,10 +101,7 @@ export function formatResult(value: number): string {
   }
 
   if (Math.abs(value) >= 0.01) {
-    const fixed = toPlainDecimal(value.toFixed(2));
-    // `toFixed` gives up and returns exponential notation at 1e21 and above;
-    // once expanded, such a value has no decimal part left to show.
-    return fixed.includes(".") ? fixed : `${fixed}.00`;
+    return formatFixed2(value);
   }
 
   return toPlainDecimal(value.toPrecision(4));

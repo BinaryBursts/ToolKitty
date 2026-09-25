@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatResult } from "./formatResult";
+import { formatFixed2, formatResult } from "./formatResult";
 
 describe("formatResult", () => {
   it.each([
@@ -77,6 +77,44 @@ describe("formatResult", () => {
     "refuses to format %p rather than print a wrong answer",
     (value) => {
       expect(() => formatResult(value)).toThrow(RangeError);
+    },
+  );
+});
+
+describe("formatFixed2", () => {
+  it.each([
+    { value: 0, expected: "0.00" },
+    { value: -0, expected: "0.00" },
+    { value: 32, expected: "32.00" },
+    { value: -40, expected: "-40.00" },
+    { value: 2.345, expected: "2.35" },
+    { value: 1234567.891, expected: "1234567.89" },
+    { value: 1e21, expected: "1000000000000000000000.00" },
+  ])("formats $value as $expected", ({ value, expected }) => {
+    expect(formatFixed2(value)).toBe(expected);
+  });
+
+  it("holds two decimal places where formatResult reaches for more", () => {
+    expect(formatFixed2(0.009999)).toBe("0.01");
+    expect(formatFixed2(1e-6)).toBe("0.00");
+    expect(formatResult(1e-6)).toBe("0.000001000");
+  });
+
+  it("shows a value that rounds to zero from below as 0.00, not -0.00", () => {
+    expect(formatFixed2(-1e-6)).toBe("0.00");
+    expect(formatFixed2(-0.004)).toBe("0.00");
+  });
+
+  it("agrees with formatResult everywhere formatResult uses two places", () => {
+    for (const value of [0.01, 2.2046226218, -2.2046226218, 1e15, 1e21]) {
+      expect(formatFixed2(value)).toBe(formatResult(value));
+    }
+  });
+
+  it.each([Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY])(
+    "refuses to format %p",
+    (value) => {
+      expect(() => formatFixed2(value)).toThrow(RangeError);
     },
   );
 });
