@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+/*
+ * Baseline tokens only. The approved ToolKitty theme — colour ramp, type scale
+ * and self-hosted fonts (Outfit, Manrope, DM Mono via next/font) — is added in
+ * the site shell ticket.
+ */
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
