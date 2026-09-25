@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import { type ReactElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
@@ -170,5 +170,27 @@ describe("a tool page inside the site shell", () => {
     );
 
     expect(landmarks).toEqual(["header", ...TOOL_PAGE_SECTIONS, "footer"]);
+  });
+});
+
+/**
+ * The tools that have been built render themselves on their own route: the
+ * registry entry, the shared template and the component meet here, which is
+ * the only place that pairing is checked (REQ-2).
+ */
+describe("the tool a route renders", () => {
+  it("renders the JSON beautifier, paste-only, at /tools/json-formatter", async () => {
+    const { container } = render(await renderRoute("json-formatter"));
+    const queries = within(container);
+
+    expect(queries.getByLabelText("Paste your JSON")).toBeInTheDocument();
+    expect(queries.getByLabelText("Formatted output")).toBeInTheDocument();
+    expect(
+      queries.getByRole("button", { name: /Beautify/ }),
+    ).toBeInTheDocument();
+
+    // Paste or type only: the route carries no file picker and no URL field.
+    expect(container.querySelectorAll('input[type="file"]')).toHaveLength(0);
+    expect(container.querySelectorAll('input[type="url"]')).toHaveLength(0);
   });
 });
