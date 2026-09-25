@@ -1,14 +1,13 @@
-import type { ComponentPropsWithoutRef, ReactNode } from "react";
+import type { ElementType, HTMLAttributes, ReactNode } from "react";
 
 /** Elements a container is allowed to render as. */
-type ContainerElement = "div" | "section" | "header" | "footer" | "nav" | "ul";
+type ContainerElement = "div" | "section" | "header" | "footer" | "nav";
 
-type ContainerProps = {
+type ContainerProps = HTMLAttributes<HTMLElement> & {
   /** Element to render. Defaults to a plain `div`. */
   as?: ContainerElement;
-  className?: string;
   children?: ReactNode;
-} & Omit<ComponentPropsWithoutRef<"div">, "className" | "children">;
+};
 
 /**
  * The one place the page's maximum width and side gutters are decided.
@@ -19,11 +18,12 @@ type ContainerProps = {
  * (see `.o-container` in globals.css).
  */
 export function Container({
-  as: Element = "div",
+  as = "div",
   className,
   children,
   ...rest
 }: ContainerProps) {
+  const Element: ElementType = as;
   const classes = className ? `o-container ${className}` : "o-container";
 
   return (

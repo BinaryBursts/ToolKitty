@@ -110,7 +110,6 @@ body {
       rgba(230, 241, 234, 0) 64%
     ),
     var(--o-bg);
-  background-attachment: fixed;
 }
 
 h1,
@@ -174,11 +173,11 @@ a {
   text-underline-offset: 3px;
 }
 
-/* One focus ring for the whole site, visible against both schemes (REQ-3). */
+/* One focus ring for the whole site, visible against both schemes (REQ-3).
+   Only the outline is set here — never the element's own shape. */
 :focus-visible {
   outline: 3px solid var(--o-focus);
   outline-offset: 2px;
-  border-radius: 6px;
 }
 
 /* --------------------------------------------------------------------------
@@ -226,9 +225,9 @@ a {
   min-width: 0;
 }
 
-.o-hide-mobile {
-  display: flex;
-}
+/* `.o-hide-mobile` deliberately sets no display of its own, so it can be put
+   on a flex row, an inline badge or a block alike; it only takes the element
+   out below 640 px. `.o-show-mobile` is the mirror image. */
 .o-show-mobile {
   display: none;
 }
@@ -1213,10 +1212,11 @@ a {
   .t-fact__note {
     color: inherit;
   }
-  .t-faq,
-  .t-swapline {
+  .t-faq {
     border-top-color: #26332d;
-    background-color: transparent;
+  }
+  .t-swapline {
+    background: #26332d;
   }
   .o-footer {
     border-top-color: #26332d;
