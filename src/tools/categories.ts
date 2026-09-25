@@ -1,4 +1,4 @@
-import type { CategoryId, ToolCategory } from "./types";
+import type { CategoryGroup, CategoryId, ToolCategory } from "./types";
 
 /**
  * The category list (REQ-2, REQ-4): the sections the homepage directory groups
@@ -44,3 +44,25 @@ export const getCategoryById = (id: string): ToolCategory | undefined =>
 /** True when `value` is one of the known category ids. */
 export const isCategoryId = (value: unknown): value is CategoryId =>
   typeof value === "string" && getCategoryById(value) !== undefined;
+
+/**
+ * Group anything that carries a category id under its category: categories
+ * ascending by `order`, items in the order given within each, and a category
+ * with no items left out entirely so the directory never renders an empty
+ * heading.
+ *
+ * It lives here rather than in the registry because the homepage directory
+ * regroups a *filtered* list in the browser as the visitor searches, and this
+ * module — unlike the registry — pulls no tool components in behind it.
+ */
+export const groupByCategory = <T extends { readonly category: CategoryId }>(
+  items: readonly T[],
+  categories: readonly ToolCategory[] = TOOL_CATEGORIES,
+): readonly CategoryGroup<T>[] =>
+  [...categories]
+    .sort((a, b) => a.order - b.order)
+    .map((category) => ({
+      category,
+      tools: items.filter((item) => item.category === category.id),
+    }))
+    .filter((group) => group.tools.length > 0);

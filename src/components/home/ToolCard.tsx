@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { SVGProps } from "react";
 
 import { cx } from "@/lib/classNames";
-import type { CategoryId, ToolDefinition } from "@/tools/types";
+import type { CategoryId, ToolListing } from "@/tools/types";
 
 /**
  * How a card is drawn: `stacked` is the featured row's card (tile above the
@@ -11,7 +11,12 @@ import type { CategoryId, ToolDefinition } from "@/tools/types";
 export type ToolCardLayout = "stacked" | "row";
 
 export type ToolCardProps = {
-  tool: ToolDefinition;
+  /**
+   * The tool to draw. A listing rather than a whole registry entry: the card
+   * shows nothing the listing does not carry, and the directory that renders
+   * it filters in the browser, where the entry's component cannot follow.
+   */
+  tool: ToolListing;
   /** Which of the two shapes the approved directory screen draws. */
   layout?: ToolCardLayout;
   /**
@@ -33,7 +38,7 @@ const CATEGORY_TILE_CLASS: Record<CategoryId, string | null> = {
 };
 
 /** The path a tool is published at. Slugs are permanent (REQ-2). */
-export const toolHref = (tool: ToolDefinition): string =>
+export const toolHref = (tool: Pick<ToolListing, "slug">): string =>
   `/tools/${tool.slug}`;
 
 function TileIcon({ children, ...rest }: SVGProps<SVGSVGElement>) {

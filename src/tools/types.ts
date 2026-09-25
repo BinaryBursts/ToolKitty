@@ -80,8 +80,29 @@ export interface ToolDefinition {
   readonly supportingCopy: readonly string[];
 }
 
+/**
+ * A tool as the homepage directory and its search need it: everything the
+ * cards show and the filter reads, and nothing else.
+ *
+ * It exists because the directory filters as the visitor types, which makes it
+ * a client component, and {@link ToolDefinition.component} is a function — it
+ * cannot cross the server-to-client boundary. The page hands the client the
+ * listing instead, which is plain data, and the tool components stay out of
+ * the homepage's JavaScript bundle (REQ-4).
+ */
+export type ToolListing = Pick<
+  ToolDefinition,
+  "slug" | "name" | "shortDescription" | "category" | "keywords" | "featured"
+>;
+
 /** A category together with the tools in it, for the directory. */
-export interface ToolsByCategory {
+export interface CategoryGroup<T> {
   readonly category: ToolCategory;
-  readonly tools: readonly ToolDefinition[];
+  readonly tools: readonly T[];
 }
+
+/** A category together with its registry entries. */
+export type ToolsByCategory = CategoryGroup<ToolDefinition>;
+
+/** A category together with its listings, as the directory renders them. */
+export type ToolListingsByCategory = CategoryGroup<ToolListing>;
