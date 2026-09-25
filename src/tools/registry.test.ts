@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { SITE_NAME } from "@/config/site";
+
 import { TOOL_CATEGORIES } from "./categories";
 import {
   getAllTools,
@@ -39,6 +41,37 @@ describe("tool registry", () => {
   it("marks every launch tool as featured", () => {
     expect(getAllTools().every((tool) => tool.featured)).toBe(true);
   });
+});
+
+/**
+ * `seoTitle` is the complete `<title>`, used verbatim by the page template —
+ * decided at review of this ticket. These tests are what stops the two halves
+ * of that decision drifting apart: an entry that drops the site name would ship
+ * a title without it, and a template that appends the site name to a title that
+ * already ends in it would ship "... | ToolKitty | ToolKitty".
+ */
+describe("SEO titles", () => {
+  it.each(getAllTools())(
+    "$slug carries the site name, because nothing appends it later",
+    (tool) => {
+      expect(tool.seoTitle.endsWith(`| ${SITE_NAME}`)).toBe(true);
+    },
+  );
+
+  it.each(getAllTools())("$slug names the site exactly once", (tool) => {
+    expect(tool.seoTitle.split(SITE_NAME)).toHaveLength(2);
+  });
+
+  it.each(getAllTools())("$slug opens with the tool's own name", (tool) => {
+    expect(tool.seoTitle.startsWith(tool.name)).toBe(true);
+  });
+
+  it.each(getAllTools())(
+    "$slug keeps its meta description to a length search engines will show",
+    (tool) => {
+      expect(tool.metaDescription.length).toBeLessThanOrEqual(160);
+    },
+  );
 });
 
 describe("getToolBySlug", () => {

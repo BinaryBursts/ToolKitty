@@ -58,8 +58,13 @@ export interface ToolDefinition {
   /** Extra words tool search matches on, beyond the name and description. */
   readonly keywords: readonly string[];
   /**
-   * The complete `<title>` of the tool page, used verbatim — it already
-   * includes the site name, so the page template must not append it again.
+   * The **complete** `<title>` of the tool page, used verbatim.
+   *
+   * It already ends with the site name — "Weight Converter — kg, lb, oz, g and
+   * stones | ToolKitty" — so the page template must render it as it is and must
+   * **not** append the site name again, and must not set a Next.js
+   * `title.template` that would wrap it. Confirmed at review of this ticket.
+   * `registry.test.ts` fails if an entry stops carrying the site name.
    */
   readonly seoTitle: string;
   /** The page's meta description. */
