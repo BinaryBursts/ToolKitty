@@ -11,7 +11,7 @@ import {
   PRIVACY_LAST_UPDATED,
   SITE_NAME,
 } from "@/config/site";
-import { absoluteUrl } from "@/lib/urls";
+import { absoluteUrl, toolPath } from "@/lib/urls";
 import { getToolListings } from "@/tools/registry";
 
 /**
@@ -76,7 +76,7 @@ function SectionHeading({
   children: ReactNode;
 }) {
   return (
-    <h2 className="o-h2" id={id} style={{ margin: 0 }}>
+    <h2 className="o-h2" id={id} style={{ margin: "14px 0 0" }}>
       {children}
     </h2>
   );
@@ -181,6 +181,14 @@ function ThirdPartyRow({
 export default function PrivacyPage() {
   const lastUpdated = formatPolicyDate(PRIVACY_LAST_UPDATED);
   const tools = getToolListings();
+
+  // The worked example of a page view is built from a real registry entry
+  // rather than a slug typed in here, so it cannot end up quoting an address
+  // the site does not have (REQ-2: slugs live in the registry and nowhere
+  // else).
+  const example = tools[0];
+  const examplePath = example ? toolPath(example.slug) : "/";
+  const exampleTitle = example ? `${example.name} — ${SITE_NAME}` : SITE_NAME;
 
   return (
     <>
@@ -290,17 +298,17 @@ export default function PrivacyPage() {
               paste in to be beautified are all held in the memory of the open
               page only. They are used to compute a result, that result is shown
               to you as plain text, and both are gone the moment you reload or
-              close the tab. Nothing you type is ever{" "}
-              <span className="o-strong">sent to a server</span>, and nothing is
-              written to your device — no cookie, no localStorage, no
+              close the tab. What you type is{" "}
+              <span className="o-strong">never sent to a server</span>, and
+              nothing is written to your device — no cookie, no localStorage, no
               sessionStorage, no downloaded file you did not ask for.
             </p>
             <p className="o-text">
-              This matters most for the JSON beautifier, where people often
-              paste an API response containing their own or their customers&rsquo;
-              data. That document is parsed by your browser&rsquo;s built-in JSON
-              reader and is never sent to us, never written to storage and never
-              included in anything we measure.
+              This matters most for the JSON formatter, where people often paste
+              an API response containing their own or their customers&rsquo;
+              data. That document is parsed by your browser&rsquo;s built-in
+              JSON reader and is never sent to us, never written to storage and
+              never included in anything we measure.
             </p>
 
             <SectionHeading id="analytics">Analytics</SectionHeading>
@@ -331,9 +339,9 @@ export default function PrivacyPage() {
                 className="o-mono o-small"
                 style={{ margin: 0, lineHeight: 1.9, overflowWrap: "anywhere" }}
               >
-                page_path: /tools/json-formatter
+                page_path: {examplePath}
                 <br />
-                page_title: JSON Beautifier — {SITE_NAME}
+                page_title: {exampleTitle}
                 <br />
                 referrer: https://www.google.com/
                 <br />
@@ -358,16 +366,16 @@ export default function PrivacyPage() {
               nothing is loaded from Google, no cookie is set and no page view
               is recorded. Every tool then works in exactly the same way: same
               features, same speed, nothing hidden behind accepting. The same is
-              true if an ad-blocker blocks Google&rsquo;s domains for you — every
-              tool on this site still loads and works normally.
+              true if an ad-blocker blocks Google&rsquo;s domains for you —
+              every tool on this site still loads and works normally.
             </p>
 
             <SectionHeading id="cookies">Cookies</SectionHeading>
             <p className="o-text">
-              {SITE_NAME} sets no cookies of its own, for any purpose —
-              not for sessions, not for preferences, not for measurement. The
-              only cookies that can ever exist for this site are Google&rsquo;s,
-              set by Google Analytics after you accept, and Google&rsquo;s AdSense
+              {SITE_NAME} sets no cookies of its own, for any purpose — not for
+              sessions, not for preferences, not for measurement. The only
+              cookies that can ever exist for this site are Google&rsquo;s, set
+              by Google Analytics after you accept, and Google&rsquo;s AdSense
               cookies if advertising is ever switched on. They are kept under
               Google&rsquo;s own retention, not ours, and clearing your
               browser&rsquo;s cookies for this site removes them.
@@ -391,13 +399,12 @@ export default function PrivacyPage() {
 
             <SectionHeading id="hosting">Hosting and logs</SectionHeading>
             <p className="o-text">
-              The site is a set of static files served over HTTPS. Our own
-              application writes no logs at all — there is no application
-              running anywhere to write them. The host keeps standard access
-              logs — an IP address and the page requested — under its own
-              retention; we do not read them in normal operation, and nothing
-              you type into a tool can appear in them, because it never leaves
-              your browser to begin with.
+              The site is a set of static files served over HTTPS by Vercel. We
+              run no application of our own anywhere, so we write no logs at
+              all. Vercel keeps standard access logs — an IP address and the
+              page requested — under its own retention; we do not read them in
+              normal operation, and nothing you type into a tool can appear in
+              them, because it never leaves your browser to begin with.
             </p>
 
             <SectionHeading id="your-rights">Your rights</SectionHeading>
@@ -405,8 +412,8 @@ export default function PrivacyPage() {
               We hold no personal data about you, so there is no record for us
               to show you, correct or erase. If you accepted analytics and want
               the page-view data Google holds disassociated from your browser,
-              clearing your browser&rsquo;s cookies for this site does it. If you
-              would rather no analytics existed in the first place, press
+              clearing your browser&rsquo;s cookies for this site does it. If
+              you would rather no analytics existed in the first place, press
               Decline — everything keeps working.
             </p>
 
@@ -502,9 +509,7 @@ export default function PrivacyPage() {
                 service="Everything else"
                 detail="Tool code, fonts and styles"
                 purpose={`Served from ${SITE_NAME} itself — nothing is fetched from another origin.`}
-                loads={
-                  <span className="o-badge o-badge--success">Always</span>
-                }
+                loads={<span className="o-badge o-badge--success">Always</span>}
                 cookies="None"
               />
             </tbody>

@@ -68,7 +68,7 @@ describe("PrivacyPage", () => {
     const text = pageText(container);
 
     expect(text).toMatch(/runs entirely in your browser/i);
-    expect(text).toMatch(/never .{0,40}sent to a server/i);
+    expect(text).toMatch(/never sent to a server/i);
   });
 
   it("says the site has no accounts, no sign-in and collects no personal data of its own", () => {
@@ -146,9 +146,7 @@ describe("PrivacyPage", () => {
   it("holds no form, input, textarea or select — the site has no server to receive one", () => {
     const { container } = render(<PrivacyPage />);
 
-    expect(
-      container.querySelector("form, input, textarea, select"),
-    ).toBeNull();
+    expect(container.querySelector("form, input, textarea, select")).toBeNull();
     // Nor a button: a control on a static policy page would do nothing.
     expect(container.querySelector("button")).toBeNull();
   });
