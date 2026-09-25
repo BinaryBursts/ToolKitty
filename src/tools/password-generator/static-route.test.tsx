@@ -91,8 +91,8 @@ describe("/tools/password-generator", () => {
       ),
     ).toEqual([
       "intro",
-      "tool",
       "privacy",
+      "tool",
       "supporting-copy",
       "more-tools",
       "ad-reserve",
@@ -140,10 +140,12 @@ describe("/tools/password-generator", () => {
 
       // ...and the file every visitor downloads holds no password. Only the
       // page's own body is scanned: the scripts Next.js links carry minified
-      // code and hashes that look like anything at all.
+      // code and hashes that look like anything at all. The slice runs from
+      // the tool to the copy below it — the privacy notice now sits above the
+      // tool, not between the two (REQ-9).
       const body = html.slice(
         html.indexOf('data-section="tool"'),
-        html.indexOf('data-section="privacy"'),
+        html.indexOf('data-section="supporting-copy"'),
       );
 
       expect(readoutValue(body)).toContain("—");

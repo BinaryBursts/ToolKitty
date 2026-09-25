@@ -34,6 +34,16 @@ export interface ToolCategory {
  * `ComponentType` with no props is deliberate: a tool must not require props
  * from outside the registry (REQ-2), so a component with a required prop will
  * not type-check as a registry entry.
+ *
+ * **A tool that sends what the visitor types anywhere may not be registered.**
+ * Every tool page carries the privacy notice
+ * ({@link file://../components/layout/PrivacyNotice.tsx}), rendered by the
+ * shared template with no way for a tool to switch it off, and it states
+ * plainly that the input never leaves the browser. A tool that needs a network
+ * request — an API lookup, a file upload, a server-side conversion — makes
+ * that notice untrue on its page, so the notice has to be changed first and
+ * the claim re-agreed; only then can such a tool go into the registry
+ * (REQ-9).
  */
 export type ToolComponent = ComponentType;
 

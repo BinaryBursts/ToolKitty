@@ -47,8 +47,8 @@ describe("/tools/temperature-converter", () => {
       ),
     ).toEqual([
       "intro",
-      "tool",
       "privacy",
+      "tool",
       "supporting-copy",
       "more-tools",
       "ad-reserve",

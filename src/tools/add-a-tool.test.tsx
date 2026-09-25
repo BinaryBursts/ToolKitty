@@ -104,6 +104,27 @@ describe("adding a fifth tool", () => {
     expect(screen.getByText("Unit price calculator body")).toBeInTheDocument();
   });
 
+  it("inherits the privacy notice without a line of markup of its own", async () => {
+    const ToolPage = (await import("@/app/tools/[slug]/page")).default;
+
+    const { container } = render(
+      (await ToolPage({
+        params: Promise.resolve({ slug: "unit-price-calculator" }),
+        searchParams: Promise.resolve({}),
+      })) as ReactElement,
+    );
+
+    // The fixture above is a component and a registry entry and nothing else,
+    // and the claim REQ-9 makes is on its page all the same — there is no
+    // prop, flag or field it could have set to be without it.
+    const notice = container.querySelector(".t-privacy");
+
+    expect(notice?.textContent).toContain(
+      "Everything you type into this tool stays in your browser.",
+    );
+    expect(notice?.querySelector('a[href="/privacy"]')).not.toBeNull();
+  });
+
   it("appears in the directory, under its own category", async () => {
     const { getToolsByCategory } = await import("@/tools/registry");
 

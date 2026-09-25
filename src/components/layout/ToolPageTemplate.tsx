@@ -17,17 +17,18 @@ import type { ToolDefinition } from "@/tools/types";
  * in exactly this order, so a section moved in the JSX fails the suite. Each
  * key is the `data-section` value of the section it names.
  *
- * **The privacy notice sits below the tool, not above it.** The approved
- * weight-converter screen draws the notice inside the intro block, above the
- * tool; REQ-2's acceptance criterion puts it after the tool, and that is the
- * order confirmed at review of this ticket. The design and the requirement
- * disagree on this one point — do not "correct" the template back to the
- * screen without reopening that decision.
+ * **The privacy notice sits above the tool, inside the intro block.** It was
+ * below the tool when the template was first built (REQ-2's criterion read
+ * that way); REQ-9 then fixed the placement the other way round — the claim
+ * has to be readable *before* the visitor types, above the fold on a 390 px
+ * phone as well as on desktop — which is also how the approved tool screens
+ * draw it. That is the order now, and moving it back down would break REQ-9's
+ * first acceptance criterion.
  */
 export const TOOL_PAGE_SECTIONS = [
   "intro",
-  "tool",
   "privacy",
+  "tool",
   "supporting-copy",
   "more-tools",
   "ad-reserve",
@@ -64,16 +65,20 @@ export function ToolPageTemplate({ tool }: { tool: ToolDefinition }) {
         </nav>
         <h1 className="o-display">{tool.name}</h1>
         <p className="o-lead">{tool.shortDescription}</p>
+        {/* Inside the intro block, not a section of its own: the notice has to
+            be read before the tool is used, and a section's own padding would
+            push it — and the tool's first control — towards the fold on a
+            phone. Rendered unconditionally and with no props, so no tool can
+            turn it off (REQ-9). */}
+        <div data-section="privacy">
+          <PrivacyNotice />
+        </div>
       </Container>
 
       <Container as="section" data-section="tool">
         <ToolErrorBoundary toolName={tool.name}>
           <Tool />
         </ToolErrorBoundary>
-      </Container>
-
-      <Container as="section" className="o-section" data-section="privacy">
-        <PrivacyNotice />
       </Container>
 
       {tool.supportingCopy.length > 0 ? (

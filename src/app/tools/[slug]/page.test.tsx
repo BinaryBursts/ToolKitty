@@ -133,7 +133,7 @@ describe("ToolPage", () => {
 
 /**
  * The header and footer come from the root layout, so the full page order —
- * header, tool heading, tool, privacy notice, supporting copy, more tools,
+ * header, tool heading, privacy notice, tool, supporting copy, more tools,
  * reserved ad space, footer — is only visible with the layout wrapped around
  * the route.
  */
@@ -171,6 +171,30 @@ describe("a tool page inside the site shell", () => {
 
     expect(landmarks).toEqual(["header", ...TOOL_PAGE_SECTIONS, "footer"]);
   });
+
+  it.each(getAllTools())(
+    "$slug reads the privacy notice out inside main, before the tool (REQ-9)",
+    async (tool) => {
+      const doc = await renderWholePage(tool.slug);
+
+      const notice = doc.querySelector("main.o-main .t-privacy");
+      const toolSection = doc.querySelector('[data-section="tool"]');
+
+      // Inside the page's main landmark, and ahead of the tool's controls in
+      // reading order, so a screen reader meets the claim before the fields.
+      expect(notice).not.toBeNull();
+      expect(notice?.textContent).toContain(
+        "Everything you type into this tool stays in your browser.",
+      );
+      expect(
+        notice!.compareDocumentPosition(toolSection!) &
+          Node.DOCUMENT_POSITION_FOLLOWING,
+      ).toBeTruthy();
+      expect(
+        doc.querySelector('main.o-main .t-privacy a[href="/privacy"]'),
+      ).not.toBeNull();
+    },
+  );
 });
 
 /**

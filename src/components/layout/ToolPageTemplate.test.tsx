@@ -74,19 +74,24 @@ describe("ToolPageTemplate", () => {
     expect(screen.getByText("Stub tool body")).toBeInTheDocument();
   });
 
-  it("shows the privacy notice on the page, above the supporting copy", () => {
+  it("shows the privacy notice on the page, above the tool", () => {
     const { container } = render(<ToolPageTemplate tool={stubEntry} />);
 
     const notice = container.querySelector(".t-privacy");
+    const tool = container.querySelector('[data-section="tool"]');
 
     expect(notice).not.toBeNull();
     expect(notice?.textContent).toContain(
-      "Everything you type here stays in your browser",
+      "Everything you type into this tool stays in your browser",
     );
     expect(notice?.textContent).toContain("never sent to a server");
+    expect(notice?.textContent).toContain("anonymous page analytics");
     expect(
-      screen.getByRole("link", { name: "Read the privacy policy" }),
+      screen.getByRole("link", { name: "How we handle data" }),
     ).toHaveAttribute("href", "/privacy");
+    expect(
+      notice!.compareDocumentPosition(tool!) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it("renders the entry's supporting copy, one paragraph each", () => {
