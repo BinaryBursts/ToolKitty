@@ -47,7 +47,10 @@
   --o-font-mono: var(--font-dm-mono), ui-monospace, monospace;
 
   /* Focus ring, tuned per scheme so it stays visible against both. */
-  --o-focus: rgba(31, 93, 76, 0.55);
+  /* 0.75 rather than the 0.55 the shell shipped with: at 0.55 the ring
+     measured 2.5:1 against the parchment surfaces, under the 3:1 a focus
+     indicator needs. At 0.75 it is 3.75:1 and still not a hard outline. */
+  --o-focus: rgba(31, 93, 76, 0.75);
 
   /* Tell the user agent both schemes are supported, so form controls,
      scrollbars and the canvas follow the system setting too. */
@@ -577,10 +580,12 @@ a {
     inset 0 3px 7px rgba(30, 36, 32, 0.1),
     inset 0 0 0 1px #e6dcc8;
 }
+/* The ring is the shared `--o-focus`, which is tuned per scheme: the design's
+   fixed rgba(31,93,76,.35) all but disappeared against a dark field. */
 .o-input:focus,
 .o-select:focus,
 .o-textarea:focus {
-  outline: 3px solid rgba(31, 93, 76, 0.35);
+  outline: 3px solid var(--o-focus);
   outline-offset: 2px;
   background: #fffdfa;
 }
@@ -824,7 +829,7 @@ a {
   box-shadow: 0 6px 12px -6px rgba(31, 93, 76, 0.85);
 }
 .t-seg__btn:focus-visible {
-  outline: 3px solid rgba(31, 93, 76, 0.45);
+  outline: 3px solid var(--o-focus);
   outline-offset: 2px;
 }
 

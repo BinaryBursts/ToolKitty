@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Container } from "@/components/layout/Container";
 import {
@@ -47,7 +47,7 @@ function Block({
 }: {
   title: string;
   note?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <section className="o-card o-stack">
