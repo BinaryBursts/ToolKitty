@@ -164,7 +164,7 @@ export function SegmentedSelect<T extends string>({
             className={cx(
               "t-seg__btn",
               selected && "t-seg__btn--on",
-              option.hint && "o-spread",
+              Boolean(option.hint) && "o-spread",
             )}
             onClick={() => {
               select(index);

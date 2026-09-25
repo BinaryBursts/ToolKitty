@@ -17,7 +17,11 @@ export type TextInputProps = ComponentPropsWithRef<"input">;
  * shared. Inside a `<Field>` it takes the field's id, description and error
  * state automatically.
  */
-export function TextInput({ className, type = "text", ...rest }: TextInputProps) {
+export function TextInput({
+  className,
+  type = "text",
+  ...rest
+}: TextInputProps) {
   const { attributes, invalid } = useFieldAttributes(rest);
 
   return (

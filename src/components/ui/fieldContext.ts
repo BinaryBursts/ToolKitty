@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext } from "react";
+import { createContext, useContext, type AriaAttributes } from "react";
 
 /**
  * What a `<Field>` tells the control inside it: the id the label points at, the
@@ -29,8 +29,13 @@ export function useField(): FieldControlContext | null {
 type ControlAttributes = {
   id?: string;
   "aria-describedby"?: string | undefined;
-  "aria-invalid"?: boolean | "true" | "false" | undefined;
+  "aria-invalid"?: AriaAttributes["aria-invalid"];
 };
+
+/** `aria-invalid` is not only true/false: "grammar" and "spelling" count too. */
+function isInvalid(value: AriaAttributes["aria-invalid"]): boolean {
+  return value === true || (typeof value === "string" && value !== "false");
+}
 
 /**
  * Merge the control's own props with the surrounding field's.
@@ -45,27 +50,23 @@ export function useFieldAttributes<T extends ControlAttributes>(
   const field = useField();
 
   if (!field) {
-    return {
-      attributes: own,
-      invalid: own["aria-invalid"] === true || own["aria-invalid"] === "true",
-    };
+    return { attributes: own, invalid: isInvalid(own["aria-invalid"]) };
   }
 
   const describedBy = [field.describedBy, own["aria-describedby"]]
     .filter(Boolean)
     .join(" ");
 
+  const ownInvalid = own["aria-invalid"];
   const invalid =
-    own["aria-invalid"] === undefined
-      ? field.invalid
-      : own["aria-invalid"] === true || own["aria-invalid"] === "true";
+    ownInvalid === undefined ? field.invalid : isInvalid(ownInvalid);
 
   return {
     attributes: {
       ...own,
       id: own.id ?? field.id,
       "aria-describedby": describedBy === "" ? undefined : describedBy,
-      "aria-invalid": invalid ? true : undefined,
+      "aria-invalid": ownInvalid ?? (field.invalid ? true : undefined),
     },
     invalid,
   };

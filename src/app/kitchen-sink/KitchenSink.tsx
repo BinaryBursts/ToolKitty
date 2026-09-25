@@ -128,7 +128,10 @@ export function KitchenSink() {
         </Button>
       </Block>
 
-      <Block title="Fields" note="Label, help text, error state and the swap control.">
+      <Block
+        title="Fields"
+        note="Label, help text, error state and the swap control."
+      >
         <Field label="Amount to convert" help="Numbers only.">
           <TextInput
             inputMode="decimal"
@@ -179,7 +182,10 @@ export function KitchenSink() {
           />
         </Field>
 
-        <Field label="Password length" help="Drag it, or nudge it with the arrow keys.">
+        <Field
+          label="Password length"
+          help="Drag it, or nudge it with the arrow keys."
+        >
           <Slider
             min={8}
             max={64}
@@ -224,7 +230,9 @@ export function KitchenSink() {
           />
         </div>
         <div className="o-stack--tight">
-          <span className="o-small o-muted">Stacked, with hints and a disabled option</span>
+          <span className="o-small o-muted">
+            Stacked, with hints and a disabled option
+          </span>
           <SegmentedSelect
             label="Indentation"
             tone="to"
@@ -260,8 +268,18 @@ export function KitchenSink() {
           }
         />
         <div className="o-row">
-          <CopyButton value="1 kg = 2.20 lb" variant="secondary" size="sm" label="Copy, small" />
-          <CopyButton value="" label="Copy, disabled" variant="ghost" disabled />
+          <CopyButton
+            value="1 kg = 2.20 lb"
+            variant="secondary"
+            size="sm"
+            label="Copy, small"
+          />
+          <CopyButton
+            value=""
+            label="Copy, disabled"
+            variant="ghost"
+            disabled
+          />
         </div>
       </Block>
 
