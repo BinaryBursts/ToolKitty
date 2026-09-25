@@ -86,12 +86,12 @@ describe("getToolsByCategory", () => {
   it("groups each tool under its own category, in registry order", () => {
     const groups = getToolsByCategory();
 
-    expect(
-      groups.map((group) => group.tools.map((tool) => tool.slug)),
-    ).toEqual([
-      ["weight-converter", "temperature-converter"],
-      ["password-generator", "json-formatter"],
-    ]);
+    expect(groups.map((group) => group.tools.map((tool) => tool.slug))).toEqual(
+      [
+        ["weight-converter", "temperature-converter"],
+        ["password-generator", "json-formatter"],
+      ],
+    );
   });
 
   it("never returns a group with no tools in it", () => {

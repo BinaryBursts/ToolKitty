@@ -2,16 +2,24 @@ import { describe, expect, it } from "vitest";
 
 import { TOOL_CATEGORIES } from "./categories";
 import { getAllTools } from "./registry";
-import { ToolPlaceholder } from "./ToolPlaceholder";
 import type { ToolDefinition } from "./types";
 import { SLUG_PATTERN, ToolRegistryError, validateTools } from "./validate";
+
+/**
+ * A stand-in tool component. It takes no props, because the registry's type
+ * will not accept one that does (REQ-2: a tool must not require props from
+ * outside the registry).
+ */
+const ExampleToolComponent = () => null;
 
 /**
  * A sound entry to mutate. Each test breaks exactly one thing, the way a
  * developer would break it while adding a tool, and checks the build-time error
  * names the entry at fault (REQ-2).
  */
-const validEntry = (overrides: Partial<ToolDefinition> = {}): ToolDefinition => ({
+const validEntry = (
+  overrides: Partial<ToolDefinition> = {},
+): ToolDefinition => ({
   slug: "example-tool",
   name: "Example Tool",
   shortDescription: "Does something useful.",
@@ -20,7 +28,7 @@ const validEntry = (overrides: Partial<ToolDefinition> = {}): ToolDefinition => 
   seoTitle: "Example Tool | ToolKitty",
   metaDescription: "An example tool used in tests.",
   featured: false,
-  component: ToolPlaceholder,
+  component: ExampleToolComponent,
   supportingCopy: ["Some supporting copy."],
   ...overrides,
 });
@@ -229,6 +237,6 @@ describe("validateTools: reporting", () => {
   });
 
   it("uses the singular for one problem", () => {
-    expect(() => validateTools([without("seoTitle")])).toThrow(/1 problem:/);
+    expect(() => validateTools([without("seoTitle")])).toThrow(/1 problem\)/);
   });
 });
