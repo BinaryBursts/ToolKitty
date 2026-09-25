@@ -30,8 +30,9 @@ function LockIcon() {
  * Rendered by the page template on every tool page rather than by each tool, so
  * no tool can ship without it and the wording cannot drift from one page to the
  * next (REQ-2). It is the one piece of the page that has to be believed, so it
- * sits high on the page, states the fact in its first sentence, and links to
- * the policy that says it at length.
+ * states the fact in its first sentence and links to the policy that says it at
+ * length. Where it sits — directly below the tool — is fixed by
+ * `TOOL_PAGE_SECTIONS` and was confirmed at review of this ticket.
  *
  * The wording here is the template's default. The privacy and trust pass
  * (REQ-9) owns the final copy, including anything to say about analytics and

@@ -16,6 +16,13 @@ import type { ToolDefinition } from "@/tools/types";
  * reads the rendered page's `data-section` attributes and asserts they come out
  * in exactly this order, so a section moved in the JSX fails the suite. Each
  * key is the `data-section` value of the section it names.
+ *
+ * **The privacy notice sits below the tool, not above it.** The approved
+ * weight-converter screen draws the notice inside the intro block, above the
+ * tool; REQ-2's acceptance criterion puts it after the tool, and that is the
+ * order confirmed at review of this ticket. The design and the requirement
+ * disagree on this one point — do not "correct" the template back to the
+ * screen without reopening that decision.
  */
 export const TOOL_PAGE_SECTIONS = [
   "intro",

@@ -173,8 +173,30 @@ describe("no file outside the registry names a tool slug", () => {
     expect(files.length).toBeGreaterThan(5);
   });
 
+  /**
+   * Comments are stripped first. What matters is that no file *behaves*
+   * differently for a named tool; a comment that mentions a slug in prose —
+   * "the approved weight converter screen", say — is documentation, not a
+   * hard-coded route. Line comments are only stripped where they start a line,
+   * so a `https://` inside a string is left alone.
+   */
+  const codeOnly = (contents: string): string =>
+    contents.replace(/\/\*[\s\S]*?\*\//g, "").replace(/^\s*\/\/.*$/gm, "");
+
+  it("still sees a slug written in code, and ignores one written in prose", () => {
+    expect(codeOnly('const href = "/tools/weight-converter";')).toContain(
+      "weight-converter",
+    );
+    expect(
+      codeOnly("  // the approved weight-converter screen\n"),
+    ).not.toContain("weight-converter");
+    expect(codeOnly("/** the weight-converter screen */\n")).not.toContain(
+      "weight-converter",
+    );
+  });
+
   it.each(files)("%s hard-codes no slug", (file) => {
-    const contents = readFileSync(join(sourceRoot, file), "utf8");
+    const contents = codeOnly(readFileSync(join(sourceRoot, file), "utf8"));
 
     for (const slug of [
       "weight-converter",
