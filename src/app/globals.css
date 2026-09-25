@@ -1287,6 +1287,20 @@ a {
   background: transparent;
 }
 
+/* The password generator's character types are four independent toggles, not
+   one choice out of four, so each stacked segment is a real checkbox inside a
+   `<label>`: Space toggles it and assistive technology reads it as checked
+   without the group having to imitate either. The box keeps its native focus
+   ring, which is why the label needs none of its own. */
+.t-toggle {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--o-primary);
+}
+
 /* Readout interior: the value column must be allowed to shrink, or a long
    result pushes the card sideways at 320 px instead of wrapping inside it. */
 .t-readout__row {
@@ -1625,7 +1639,8 @@ a {
   .o-error {
     color: #ff9b86;
   }
-  .t-range {
+  .t-range,
+  .t-toggle {
     accent-color: #8fbdaa;
   }
   .t-swap {
