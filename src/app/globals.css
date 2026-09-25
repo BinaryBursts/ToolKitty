@@ -228,6 +228,32 @@ a {
   min-width: 0;
 }
 
+/* The design's grids. One column on a phone and widening from there, so a
+   directory card, a featured row and the hero all reflow without a horizontal
+   scrollbar at 320 px. Every track is `minmax(0, 1fr)`: a plain `1fr` refuses
+   to shrink below its content, which is exactly how a long tool name pushes a
+   grid wider than the screen. */
+.o-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: calc(var(--o-space) * 2);
+}
+@media (min-width: 641px) {
+  .o-grid--2,
+  .o-grid--4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .o-grid--sidebar {
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: calc(var(--o-space) * 4);
+  }
+}
+@media (min-width: 961px) {
+  .o-grid--4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
 /* `.o-hide-mobile` deliberately sets no display of its own, so it can be put
    on a flex row, an inline badge or a block alike; it only takes the element
    out below 640 px. `.o-show-mobile` is the mirror image. */
@@ -638,6 +664,10 @@ a {
   box-shadow: inset 0 0 0 1px #e6dcc8;
   font-weight: 600;
   font-size: 0.88rem;
+  /* A chip is a chip whether it is a label or a link to a section of the
+     page; a link inside one must not come out underlined and link-coloured. */
+  color: inherit;
+  text-decoration: none;
 }
 .o-chip--active {
   background: #1f5d4c;
@@ -1002,6 +1032,36 @@ a {
   color: #a8462e;
 }
 
+/* The directory's wide card: the same tile, laid on its side with the text
+   beside it rather than beneath. */
+.t-tool--row {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+}
+.t-tool--row .t-tool__ico {
+  margin-bottom: 0;
+  flex: none;
+}
+.t-tool__body {
+  flex: 1 1 auto;
+  /* Without this a long word in a card would widen the grid track instead of
+     wrapping — the 320 px overflow this layout is most likely to hit. */
+  min-width: 0;
+}
+/* The card's URL, which is one unbreakable token; it has to be allowed to
+   break rather than run past the card edge on a narrow screen. */
+.t-tool__path {
+  overflow-wrap: anywhere;
+}
+.t-tool__open {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--o-primary);
+  font-weight: 700;
+}
+
 .t-faq {
   border-top: 1px solid #ede4d4;
   padding-top: 14px;
@@ -1364,6 +1424,24 @@ a {
   .t-copy p,
   .t-fact__note {
     color: inherit;
+  }
+  /* The directory card kept the light scheme's cream hairline, which reads as
+     a bright outline on the dark canvas. Restated in the dark palette the
+     cards' neighbours (`.o-card`, `.t-device`) already use. */
+  .t-tool {
+    background: linear-gradient(180deg, #18221e, #141d1a);
+    box-shadow:
+      0 40px 60px -46px #000,
+      inset 0 0 0 1px #26332d;
+  }
+  .t-tool:hover {
+    box-shadow:
+      0 46px 64px -44px #000,
+      inset 0 0 0 1px #2c4a3e;
+  }
+  /* Deep green on a dark card is the same contrast problem the links had. */
+  .t-tool__open {
+    color: #8fbdaa;
   }
   .t-faq {
     border-top-color: #26332d;
