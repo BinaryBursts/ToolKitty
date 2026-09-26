@@ -3,7 +3,6 @@ import Link from "next/link";
 import type { ReactNode, SVGProps } from "react";
 
 import { ToolCard } from "@/components/home/ToolCard";
-import { AdReserve } from "@/components/layout/AdReserve";
 import { Container } from "@/components/layout/Container";
 import {
   CONTACT_EMAIL,
@@ -36,6 +35,14 @@ import { getToolListings } from "@/tools/registry";
  * It is a server component with no client boundary: everything on it is
  * committed copy, so the whole page is rendered into `out/about.html` at build
  * time and reads the same with JavaScript switched off.
+ *
+ * One deliberate departure from the approved screen: it draws a reserved
+ * advertising block at the foot of this page, and there is none here. The
+ * owner settled it as tool pages only, which is also what the privacy policy
+ * already tells visitors — advertising appears "in the reserved space below a
+ * tool". Reserving space on an information page would have made the policy
+ * wrong the day ads were switched on. `AdReserve` therefore stays where
+ * `ToolPageTemplate` renders it, and nowhere else.
  */
 
 export const metadata: Metadata = {
@@ -349,10 +356,6 @@ export default function AboutPage() {
             <Link href="/privacy">Read the privacy policy</Link>
           </p>
         </div>
-      </Container>
-
-      <Container as="section">
-        <AdReserve />
       </Container>
     </>
   );

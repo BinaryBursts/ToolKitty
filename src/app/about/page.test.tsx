@@ -170,6 +170,21 @@ describe("AboutPage", () => {
 
     expect(container.querySelector("style, link[rel='stylesheet']")).toBeNull();
   });
+
+  /*
+   * The owner settled where advertising may be reserved: tool pages only. That
+   * matches what the privacy policy already tells visitors — ads appear "in
+   * the reserved space below a tool" — so a reserve on an information page
+   * would make the policy wrong the day ads are switched on. The approved
+   * screen draws one here; this test is what stops it coming back without the
+   * policy being revised with it.
+   */
+  it("reserves no advertising space — that belongs to tool pages only", () => {
+    const { container } = render(<AboutPage />);
+
+    expect(container.querySelector(".t-reserve")).toBeNull();
+    expect(container.querySelector("[data-ad-slot]")).toBeNull();
+  });
 });
 
 describe("AboutPage metadata", () => {
