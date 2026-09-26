@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import { ConsentBanner } from "@/components/consent/ConsentBanner";
+import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SITE_DESCRIPTION, SITE_NAME } from "@/config/site";
@@ -31,19 +33,29 @@ export const metadata: Metadata = {
  * dark come from the `prefers-color-scheme` media query in globals.css alone,
  * so the first paint is already correct and nothing has to be read from — or
  * written to — cookies, localStorage or sessionStorage (REQ-3).
+ *
+ * The one piece of state the shell does hold is the consent answer, and it
+ * holds it the same way: in memory, for this browsing session only. The
+ * provider wraps everything so every page — homepage, tool pages, /privacy,
+ * /about and the 404 — is inside it, and the banner it renders sits after the
+ * footer, outside `<main>`, so it is last in the tab order and covers nothing
+ * (REQ-11).
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={fontVariables}>
       <body>
-        <a className="o-skip" href="#content">
-          Skip to content
-        </a>
-        <SiteHeader />
-        <main className="o-main" id="content">
-          {children}
-        </main>
-        <SiteFooter />
+        <ConsentProvider>
+          <a className="o-skip" href="#content">
+            Skip to content
+          </a>
+          <SiteHeader />
+          <main className="o-main" id="content">
+            {children}
+          </main>
+          <SiteFooter />
+          <ConsentBanner />
+        </ConsentProvider>
       </body>
     </html>
   );
