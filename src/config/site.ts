@@ -57,11 +57,33 @@ export const PRIVACY_LAST_UPDATED = "2026-09-14";
 /**
  * Google Analytics 4 measurement ID (format "G-XXXXXXXXXX").
  *
+ * Public by nature: a measurement ID is visible in the page source of every
+ * site that uses one, it authorises nothing, and it needs no secret handling —
+ * so it is committed here rather than read from an environment variable
+ * (REQ-11), and the site keeps building with it empty.
+ *
  * Empty string until the owner supplies the real ID. Analytics code must treat
  * an empty value as "analytics disabled" and load no third-party script, so
  * local development and preview builds stay free of tracking.
+ *
+ * TODO(owner): paste the GA4 measurement ID here and redeploy — see the
+ * "Analytics" section of the README. Nothing else has to change.
  */
 export const GA_MEASUREMENT_ID = "";
 
-/** True when a Google Analytics measurement ID has been configured. */
-export const isAnalyticsEnabled = (): boolean => GA_MEASUREMENT_ID.length > 0;
+/**
+ * The shape of a GA4 measurement ID: `G-` followed by letters and digits.
+ *
+ * The constant above is pasted in by hand and then put into a URL and handed
+ * to Google's tag, so it is checked rather than trusted (REQ-15: all input is
+ * validated before use — a value typed by the owner included). A value of any
+ * other shape cannot measure anything, so it is treated exactly like an absent
+ * one: analytics stays off and the site renders normally. `site.test.ts` fails
+ * the build if what is committed here is neither empty nor well formed, so a
+ * typo is caught before it is deployed rather than discovered as missing data.
+ */
+export const GA_MEASUREMENT_ID_PATTERN = /^G-[A-Za-z0-9]{4,24}$/;
+
+/** True when a usable Google Analytics measurement ID has been configured. */
+export const isAnalyticsEnabled = (): boolean =>
+  GA_MEASUREMENT_ID_PATTERN.test(GA_MEASUREMENT_ID);
