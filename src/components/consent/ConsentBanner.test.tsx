@@ -6,7 +6,7 @@ import AboutPage from "@/app/about/page";
 import HomePage from "@/app/page";
 import NotFound from "@/app/not-found";
 import PrivacyPage from "@/app/privacy/page";
-import ToolPage from "@/app/tools/[slug]/page";
+import ToolRoute from "@/app/tools/[slug]/page";
 
 import {
   CONSENT_ACCEPT_LABEL,
@@ -24,7 +24,7 @@ import { ConsentProvider } from "./ConsentProvider";
  * use, and the privacy notice every tool page carries. The banner has to
  * leave all of it usable.
  */
-function ToolPage({ name = "Weight converter" }: { name?: string }) {
+function StandInPage({ name = "Weight converter" }: { name?: string }) {
   return (
     <main id="content">
       <h1>{name}</h1>
@@ -38,7 +38,7 @@ function ToolPage({ name = "Weight converter" }: { name?: string }) {
 function Shell({ children }: { children?: ReactNode }) {
   return (
     <ConsentProvider>
-      {children ?? <ToolPage />}
+      {children ?? <StandInPage />}
       <ConsentBanner />
     </ConsentProvider>
   );
@@ -124,7 +124,7 @@ describe("ConsentBanner", () => {
     // provider itself does not remount.
     rerender(
       <Shell>
-        <ToolPage name="Password generator" />
+        <StandInPage name="Password generator" />
       </Shell>,
     );
 
@@ -218,9 +218,7 @@ describe("ConsentBanner", () => {
     const region = container.querySelector(".t-consent");
 
     expect(children.indexOf(region!)).toBe(children.length - 1);
-    expect(children.indexOf(region!)).toBeGreaterThan(
-      children.indexOf(main!),
-    );
+    expect(children.indexOf(region!)).toBeGreaterThan(children.indexOf(main!));
   });
 
   it("locks nothing: page scrolling is left exactly as it was", () => {
@@ -263,13 +261,11 @@ describe("the banner on each kind of page", () => {
     render(<Shell>{<HomePage />}</Shell>);
 
     expect(banner()).not.toBeNull();
-    expect(
-      screen.getByRole("heading", { level: 1 }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
   });
 
   it("appears with a tool page, whose tool still works", async () => {
-    const toolPage = (await ToolPage({
+    const toolPage = (await ToolRoute({
       params: Promise.resolve({ slug: "weight-converter" }),
       searchParams: Promise.resolve({}),
     })) as ReactElement;
@@ -278,7 +274,7 @@ describe("the banner on each kind of page", () => {
 
     expect(banner()).not.toBeNull();
     // The tool's own controls are still there and still enabled behind it.
-    expect(screen.getByLabelText(/^Value/)).toBeEnabled();
+    expect(screen.getByLabelText("Amount to convert")).toBeEnabled();
   });
 
   it("appears with the privacy policy, without covering it", () => {

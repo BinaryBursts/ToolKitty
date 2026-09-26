@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui";
 
@@ -88,6 +88,26 @@ function useReservedSpace(element: HTMLElement | null): void {
   }, [element]);
 }
 
+/** Nothing to subscribe to: the answer below never changes after hydration. */
+const subscribeToNothing = () => () => {};
+
+/**
+ * False while the exported HTML is being rendered and during hydration, true
+ * from the first client render onwards.
+ *
+ * This is the supported way to render something on the client only — React
+ * takes the server snapshot for the hydration pass and re-renders with the
+ * client one straight after, so there is no hydration mismatch and no
+ * setState in an effect.
+ */
+function useHydrated(): boolean {
+  return useSyncExternalStore(
+    subscribeToNothing,
+    () => true,
+    () => false,
+  );
+}
+
 /**
  * The bar itself, rendered only while the question is open.
  *
@@ -152,13 +172,9 @@ function ConsentBar() {
  */
 export function ConsentBanner() {
   const { consent } = useConsent();
-  const [mounted, setMounted] = useState(false);
+  const hydrated = useHydrated();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted || consent !== "unanswered") {
+  if (!hydrated || consent !== "unanswered") {
     return null;
   }
 

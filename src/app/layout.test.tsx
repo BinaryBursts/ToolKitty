@@ -2,6 +2,8 @@ import { within } from "@testing-library/dom";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
+import { useConsent } from "@/components/consent/ConsentProvider";
+
 // `next/font/google` is a build-time loader that only exists inside the Next
 // compiler, so it is stubbed here with the shape the layout consumes.
 vi.mock("next/font/google", () => {
@@ -110,5 +112,40 @@ describe("RootLayout", () => {
     // there must be nothing script-shaped in the shell (REQ-3).
     expect(markup).not.toContain("<script");
     expect(markup).not.toMatch(/localStorage|sessionStorage|document\.cookie/);
+  });
+});
+
+describe("the shell's consent state", () => {
+  /** A page that asks the shell what the visitor has answered. */
+  function ConsentProbe() {
+    const { consent } = useConsent();
+
+    return <p>consent: {consent}</p>;
+  }
+
+  it("wraps every page in the consent provider", async () => {
+    const { default: RootLayout } = await import("./layout");
+
+    // `useConsent` throws outside a provider, so this rendering at all is the
+    // assertion: whatever page Next puts inside the layout can read the one
+    // session answer the banner and the analytics loader share (REQ-11).
+    const markup = renderToStaticMarkup(
+      <RootLayout params={Promise.resolve({})}>
+        <ConsentProbe />
+      </RootLayout>,
+    );
+
+    expect(markup).toContain("consent: unanswered");
+  });
+
+  it("leaves the banner out of the exported HTML, where it could not be answered", async () => {
+    const markup = await renderLayoutMarkup();
+
+    // The banner arrives with the first client render instead (see
+    // `ConsentBanner`): with JavaScript off nothing can load analytics and
+    // nothing could dismiss a baked-in bar, and rendering it with the space
+    // reserved for it means it never covers the page, even for a frame.
+    expect(markup).not.toContain("t-consent");
+    expect(markup).not.toContain("Analytics cookies?");
   });
 });
