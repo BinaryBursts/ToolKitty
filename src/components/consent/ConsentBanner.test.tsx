@@ -10,7 +10,6 @@ import ToolRoute from "@/app/tools/[slug]/page";
 
 import {
   CONSENT_ACCEPT_LABEL,
-  CONSENT_BUTTON_CLASS,
   CONSENT_DECLINE_LABEL,
   CONSENT_HEIGHT_PROPERTY,
   CONSENT_MESSAGE,
@@ -18,6 +17,13 @@ import {
   ConsentBanner,
 } from "./ConsentBanner";
 import { ConsentProvider } from "./ConsentProvider";
+
+/**
+ * The classes both answers must carry, identically — written out here rather
+ * than imported from the component, so the test pins the rendered result
+ * instead of agreeing with it (REQ-11: same size, same emphasis).
+ */
+const CONSENT_BUTTON_CLASS = "o-btn o-btn--secondary";
 
 /**
  * A stand-in for a page of the site: a heading, a control the visitor came to
@@ -44,9 +50,13 @@ function Shell({ children }: { children?: ReactNode }) {
   );
 }
 
-const banner = () =>
-  screen.queryByRole("region", { name: CONSENT_TITLE }) ??
-  screen.queryByText(CONSENT_MESSAGE, { exact: false });
+/**
+ * The banner, found the way a screen reader finds it: the landmark region
+ * named by its title. Deliberately the only way these tests look for it — a
+ * fallback on the copy would let the landmark lose its accessible name
+ * without a single test noticing.
+ */
+const banner = () => screen.queryByRole("region", { name: CONSENT_TITLE });
 
 const acceptButton = () =>
   screen.getByRole("button", { name: CONSENT_ACCEPT_LABEL });
@@ -270,11 +280,21 @@ describe("the banner on each kind of page", () => {
       searchParams: Promise.resolve({}),
     })) as ReactElement;
 
-    render(<Shell>{toolPage}</Shell>);
+    const { container } = render(<Shell>{toolPage}</Shell>);
 
     expect(banner()).not.toBeNull();
-    // The tool's own controls are still there and still enabled behind it.
-    expect(screen.getByLabelText("Amount to convert")).toBeEnabled();
+
+    // The two things the banner is forbidden to swallow on a tool page: the
+    // tool's own controls, and the privacy notice the shared template renders
+    // above it (REQ-9). Both are present and neither is disabled.
+    const controls = [...container.querySelectorAll("input, select, textarea")];
+    expect(controls.length).toBeGreaterThan(0);
+    for (const control of controls) {
+      expect(control).toBeEnabled();
+    }
+    expect(
+      screen.getByText(/stays in your browser/i, { exact: false }),
+    ).toBeInTheDocument();
   });
 
   it("appears with the privacy policy, without covering it", () => {

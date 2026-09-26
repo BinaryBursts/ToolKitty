@@ -148,4 +148,37 @@ describe("the shell's consent state", () => {
     expect(markup).not.toContain("t-consent");
     expect(markup).not.toContain("Analytics cookies?");
   });
+
+  it("mounts the banner itself, last, after the footer", async () => {
+    // The banner renders nothing until it is hydrated, so its absence from
+    // the markup above proves nothing about the layout still mounting it.
+    // Standing a marker in its place is what does: delete <ConsentBanner />
+    // from the shell and this fails, which is the whole point — every page
+    // gets the banner because the layout, and only the layout, mounts it
+    // (REQ-11).
+    vi.resetModules();
+    vi.doMock("@/components/consent/ConsentBanner", () => ({
+      ConsentBanner: () => <div data-banner="mounted" />,
+    }));
+
+    try {
+      const { default: RootLayout } = await import("./layout");
+
+      const markup = renderToStaticMarkup(
+        <RootLayout params={Promise.resolve({})}>
+          <p>Page content</p>
+        </RootLayout>,
+      );
+
+      expect(markup).toContain('data-banner="mounted"');
+      // After the footer: last in the document, and so last in the tab
+      // order, with nothing trapped behind it.
+      expect(markup.indexOf('data-banner="mounted"')).toBeGreaterThan(
+        markup.indexOf("</footer>"),
+      );
+    } finally {
+      vi.doUnmock("@/components/consent/ConsentBanner");
+      vi.resetModules();
+    }
+  });
 });

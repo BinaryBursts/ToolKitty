@@ -25,13 +25,6 @@ export const CONSENT_POLICY_LINK_LABEL = "Privacy policy";
 export const CONSENT_ACCEPT_LABEL = "Accept";
 export const CONSENT_DECLINE_LABEL = "Decline";
 
-/**
- * The classes both answers carry, identically: same component, same variant,
- * same size, so "equal prominence" is a fact about the markup rather than a
- * judgement about the design (REQ-11).
- */
-export const CONSENT_BUTTON_CLASS = "o-btn o-btn--secondary";
-
 /** Id of the visible title the region is named by. */
 const TITLE_ID = "consent-banner-title";
 
