@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { Analytics } from "@/components/analytics/Analytics";
 import { ConsentBanner } from "@/components/consent/ConsentBanner";
 import { ConsentProvider } from "@/components/consent/ConsentProvider";
 import { SiteFooter } from "@/components/layout/SiteFooter";
@@ -40,6 +41,11 @@ export const metadata: Metadata = {
  * /about and the 404 — is inside it, and the banner it renders sits after the
  * footer, outside `<main>`, so it is last in the tab order and covers nothing
  * (REQ-11).
+ *
+ * `<Analytics />` sits last of all, inside the same provider: it renders
+ * nothing at all until that answer is `"accepted"`, so no analytics script is
+ * in the exported HTML, none is in the DOM before Accept, and — being after
+ * the content — it could not delay the first paint even once it is.
  */
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
@@ -55,6 +61,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           </main>
           <SiteFooter />
           <ConsentBanner />
+          <Analytics />
         </ConsentProvider>
       </body>
     </html>

@@ -57,9 +57,17 @@ export const PRIVACY_LAST_UPDATED = "2026-09-14";
 /**
  * Google Analytics 4 measurement ID (format "G-XXXXXXXXXX").
  *
+ * Public by nature: a measurement ID is visible in the page source of every
+ * site that uses one, it authorises nothing, and it needs no secret handling —
+ * so it is committed here rather than read from an environment variable
+ * (REQ-11), and the site keeps building with it empty.
+ *
  * Empty string until the owner supplies the real ID. Analytics code must treat
  * an empty value as "analytics disabled" and load no third-party script, so
  * local development and preview builds stay free of tracking.
+ *
+ * TODO(owner): paste the GA4 measurement ID here and redeploy — see the
+ * "Analytics" section of the README. Nothing else has to change.
  */
 export const GA_MEASUREMENT_ID = "";
 
