@@ -100,17 +100,18 @@ export function gtagCallArguments(code: string): string[] {
 /**
  * Every `gtag` call the analytics module is allowed to make, written out.
  *
- * - the empty one is the snippet's own `function gtag(){...}` declaration;
- * - `js` and `config` are the standard bootstrap, configured from a committed
- *   constant and a constant object — neither reads anything from the page;
+ * - the empty one is the queue function's own `function gtag()` declaration;
+ * - `js` and `config` are the standard bootstrap, configured from a validated
+ *   committed constant and a constant object — neither reads anything from the
+ *   page;
  * - the one event is a page view, and its parameters come from `pageViewFor`,
  *   which is checked below to read only the router's path and the document
  *   title.
  */
 const PERMITTED_GTAG_CALLS = [
   "",
-  "'js', new Date()",
-  "'config', ${JSON.stringify(measurementId)}, ${JSON.stringify(GA_CONFIG)}",
+  '"js", new Date()',
+  '"config", measurementId, GA_CONFIG',
   '"event", PAGE_VIEW_EVENT, pageViewFor(pathname)',
 ];
 

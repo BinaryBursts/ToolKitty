@@ -110,6 +110,17 @@ Nothing is loaded and no cookie is set until the visitor presses **Accept** on
 the consent banner. Decline, or ignoring the banner, loads no script at all, and
 the answer is kept in memory for the session only — so a reload asks again.
 
+**There is no inline script.** The data layer and the opening `js`/`config`
+calls are ordinary bundled code, not a `<script>` tag with a snippet in it, so
+the content security policy this site sets on deployment (REQ-15) needs no
+`unsafe-inline` and no per-deployment hash:
+
+```
+script-src 'self' https://www.googletagmanager.com;
+connect-src 'self' https://www.google-analytics.com https://*.analytics.google.com;
+img-src 'self' data: https://www.google-analytics.com;
+```
+
 ### The one manual step after merge
 
 The measurement ID is a public value and is committed, not configured through
@@ -124,7 +135,10 @@ To turn measurement on:
 2. Paste it into `GA_MEASUREMENT_ID` in
    [`src/config/site.ts`](src/config/site.ts), replacing the empty string, and
    remove the `TODO(owner)` note above it.
-3. Commit and redeploy. Data appears in GA4 realtime as soon as somebody
+3. Run `npm test`. A value that is not of the form `G-` plus letters and digits
+   fails `src/config/site.test.ts`, and the site would treat it as absent and
+   leave analytics off rather than measure into nowhere.
+4. Commit and redeploy. Data appears in GA4 realtime as soon as somebody
    accepts the banner.
 
 No secret is involved and no `.env` file is needed for this: a GA4 measurement

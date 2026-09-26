@@ -20,6 +20,11 @@ import { GA_MEASUREMENT_ID, isAnalyticsEnabled } from "@/config/site";
  * shape — and `page-views-only.test.ts` says so again by scanning the source,
  * because a future "just one custom event" is exactly how this rule gets lost.
  *
+ * The measurement ID is checked for shape before it is used, in
+ * `src/config/site.ts`: it is a hand-pasted value that ends up in a URL and in
+ * a call to Google's tag, and one of the wrong shape switches analytics off
+ * rather than being passed on.
+ *
  * Nothing here runs, and no request to a Google host is made, until the
  * visitor presses Accept on the consent banner: the component returns `null`
  * while the answer is `"unanswered"` or `"declined"`, so the script tag is not
