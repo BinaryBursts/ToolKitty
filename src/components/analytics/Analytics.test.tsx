@@ -13,9 +13,7 @@ import {
 import {
   Analytics,
   GA_CONFIG,
-  GTAG_INIT_SCRIPT_ID,
   GTAG_SCRIPT_ID,
-  gtagBootstrapScript,
   gtagScriptSrc,
   PAGE_VIEW_EVENT,
 } from "./Analytics";
@@ -24,9 +22,11 @@ import {
  * The measurement ID, swapped per test.
  *
  * `@/config/site` is mocked below with a getter over this, so a test can run
- * the component with an ID configured and with the empty placeholder that is
- * committed today, without either case depending on what the constant happens
- * to hold in `src/config/site.ts` on the day the suite runs.
+ * the component with an ID configured, with the empty placeholder that is
+ * committed today, and with a malformed value — without any of them depending
+ * on what the constant happens to hold in `src/config/site.ts` on the day the
+ * suite runs. The enabled/disabled rule itself is the real one: the mock
+ * defers to the pattern exported by the real module.
  */
 const config = vi.hoisted(() => ({ measurementId: "G-TEST1234567" }));
 
@@ -38,7 +38,8 @@ vi.mock("@/config/site", async (importOriginal) => {
     get GA_MEASUREMENT_ID() {
       return config.measurementId;
     },
-    isAnalyticsEnabled: () => config.measurementId.length > 0,
+    isAnalyticsEnabled: () =>
+      actual.GA_MEASUREMENT_ID_PATTERN.test(config.measurementId),
   };
 });
 
@@ -48,6 +49,16 @@ const router = vi.hoisted(() => ({ pathname: "/tools/weight-converter" }));
 vi.mock("next/navigation", () => ({
   usePathname: () => router.pathname,
 }));
+
+type ScriptProps = {
+  id?: string;
+  src?: string;
+  strategy?: string;
+  onError?: (error: Error) => void;
+};
+
+/** Every set of props the component handed to `next/script`, in order. */
+const rendered = vi.hoisted(() => ({ scripts: [] as unknown[] }));
 
 /**
  * `next/script` stands in as a plain `<script>` element.
@@ -61,35 +72,18 @@ vi.mock("next/navigation", () => ({
  * `next/script` accepts is checked by the type-checker, since `Analytics`
  * imports the real component.
  */
-type ScriptProps = {
-  id?: string;
-  src?: string;
-  strategy?: string;
-  dangerouslySetInnerHTML?: { __html: string };
-  onError?: (error: Error) => void;
-};
-
-/** Every set of props the component handed to `next/script`, in order. */
-const rendered = vi.hoisted(() => ({ scripts: [] as unknown[] }));
-
 vi.mock("next/script", () => ({
   default: (props: ScriptProps) => {
     rendered.scripts.push(props);
 
-    const { id, src, strategy, dangerouslySetInnerHTML } = props;
+    const { id, src, strategy } = props;
 
     return (
       // A test double, not a script on a page: jsdom fetches nothing, and the
       // real loading strategy belongs to `next/script`, which this replaces.
       // The synchronous-script rule has nothing to warn about here.
       // eslint-disable-next-line @next/next/no-sync-scripts
-      <script
-        id={id}
-        src={src}
-        data-strategy={strategy}
-        data-nscript-mock=""
-        {...(dangerouslySetInnerHTML ? { dangerouslySetInnerHTML } : {})}
-      />
+      <script id={id} src={src} data-strategy={strategy} data-nscript-mock="" />
     );
   },
 }));
@@ -131,8 +125,12 @@ const scriptTags = (): HTMLScriptElement[] => [
 const scriptWithId = (id: string): HTMLScriptElement | undefined =>
   scriptTags().find((script) => script.id === id);
 
-/** Calls made to the global `gtag`, as `[command, event, parameters]`. */
+/** Calls made to the global `gtag`, as `[command, ...arguments]`. */
 let gtagCalls: unknown[][] = [];
+
+/** Just the events among them — the only ones that measure a visit. */
+const events = (): unknown[][] =>
+  gtagCalls.filter((call) => call[0] === "event");
 
 beforeEach(() => {
   config.measurementId = "G-TEST1234567";
@@ -158,6 +156,7 @@ describe("Analytics, before consent", () => {
 
     expect(scriptTags()).toHaveLength(0);
     expect(gtagCalls).toHaveLength(0);
+    expect(window.dataLayer).toBeUndefined();
   });
 
   it("renders nothing at all when the visitor declined", () => {
@@ -165,6 +164,7 @@ describe("Analytics, before consent", () => {
 
     expect(scriptTags()).toHaveLength(0);
     expect(gtagCalls).toHaveLength(0);
+    expect(window.dataLayer).toBeUndefined();
   });
 
   it("leaves the page it sits beside completely alone either way", () => {
@@ -191,10 +191,10 @@ describe("Analytics, before consent", () => {
 });
 
 describe("Analytics, once consent is given", () => {
-  it("renders both gtag script tags", () => {
+  it("renders the gtag.js script tag", () => {
     render(<Shell answer="accepted" />);
 
-    expect(scriptTags()).toHaveLength(2);
+    expect(scriptTags()).toHaveLength(1);
 
     const loader = scriptWithId(GTAG_SCRIPT_ID);
     expect(loader).toBeDefined();
@@ -204,32 +204,67 @@ describe("Analytics, once consent is given", () => {
     );
     expect(loader).toHaveAttribute("data-strategy", "afterInteractive");
 
-    const init = scriptWithId(GTAG_INIT_SCRIPT_ID);
-    expect(init).toBeDefined();
-    expect(init).toHaveAttribute("data-strategy", "afterInteractive");
-    expect(init?.innerHTML).toBe(gtagBootstrapScript("G-TEST1234567"));
+    // gtag.js itself, not a tag manager container, and no inline script.
+    expect(gtagScriptSrc("G-TEST1234567")).not.toContain("gtm.js");
+    expect(propsOf(GTAG_SCRIPT_ID)).not.toHaveProperty(
+      "dangerouslySetInnerHTML",
+    );
   });
 
-  it("configures the measurement conservatively and with no extras", () => {
-    const snippet = gtagBootstrapScript("G-TEST1234567");
+  it("opens the measurement conservatively, and with nothing else", () => {
+    render(<Shell answer="accepted" />);
 
-    expect(snippet).toContain("window.dataLayer = window.dataLayer || []");
-    expect(snippet).toContain("gtag('js', new Date())");
-    expect(snippet).toContain("gtag('config', \"G-TEST1234567\"");
+    expect(gtagCalls).toHaveLength(2);
 
-    // Exactly the three settings, and nothing that identifies a person.
-    expect(GA_CONFIG).toEqual({
-      send_page_view: true,
-      allow_google_signals: false,
-      allow_ad_personalization_signals: false,
-    });
-    expect(snippet).not.toMatch(/user_id|client_id|custom_map|anonymize_ip/);
+    const [js, configure] = gtagCalls;
+    expect(js?.[0]).toBe("js");
+    expect(js?.[1]).toBeInstanceOf(Date);
 
-    // gtag.js is the only third party fetched: no tag manager container.
-    expect(gtagScriptSrc("G-TEST1234567")).toBe(
-      "https://www.googletagmanager.com/gtag/js?id=G-TEST1234567",
-    );
-    expect(gtagScriptSrc("G-TEST1234567")).not.toContain("gtm.js");
+    expect(configure).toEqual([
+      "config",
+      "G-TEST1234567",
+      {
+        send_page_view: true,
+        allow_google_signals: false,
+        allow_ad_personalization_signals: false,
+      },
+    ]);
+
+    // The settings object is the whole configuration: no user id, no custom
+    // parameter, nothing that identifies a person.
+    expect(Object.keys(GA_CONFIG).sort()).toEqual([
+      "allow_ad_personalization_signals",
+      "allow_google_signals",
+      "send_page_view",
+    ]);
+  });
+
+  it("opens it once, however often the component re-renders", () => {
+    const { rerender } = render(<Shell answer="accepted" />);
+
+    rerender(<Shell answer="accepted" />);
+    rerender(<Shell answer="accepted" />);
+
+    expect(gtagCalls.filter((call) => call[0] === "config")).toHaveLength(1);
+  });
+
+  it("creates the data layer and queues onto it when nothing else has", () => {
+    // No spy this time: the real bootstrap has to stand up the queue itself,
+    // exactly as Google's snippet would.
+    delete window.gtag;
+
+    render(<Shell answer="accepted" />);
+
+    expect(typeof window.gtag).toBe("function");
+    expect(Array.isArray(window.dataLayer)).toBe(true);
+    expect(window.dataLayer).toHaveLength(2);
+
+    // Each entry is the `arguments` object gtag.js expects, not an array.
+    const queued = (window.dataLayer ?? []) as IArguments[];
+    expect(Array.isArray(queued[0])).toBe(false);
+    expect([...queued[0]!][0]).toBe("js");
+    expect([...queued[1]!][0]).toBe("config");
+    expect([...queued[1]!][1]).toBe("G-TEST1234567");
   });
 
   it("renders nothing when the measurement ID has not been supplied", () => {
@@ -239,12 +274,33 @@ describe("Analytics, once consent is given", () => {
 
     expect(scriptTags()).toHaveLength(0);
     expect(gtagCalls).toHaveLength(0);
+    expect(window.dataLayer).toBeUndefined();
   });
 
-  it("sends no page view for the page consent was given on — the config call did", () => {
+  it.each([
+    "not-an-id",
+    "G-",
+    "UA-123456-1",
+    "GTM-ABCD123",
+    'G-1"></script><script>alert(1)</script>',
+    " G-ABCD123456 ",
+  ])("renders nothing for the unusable measurement ID %j", (id) => {
+    // A value of the wrong shape cannot measure anything, so it is treated as
+    // an absent one rather than handed to Google or put into a URL.
+    config.measurementId = id;
+
     render(<Shell answer="accepted" />);
 
+    expect(scriptTags()).toHaveLength(0);
     expect(gtagCalls).toHaveLength(0);
+  });
+
+  it("sends no page-view event for the page consent was given on", () => {
+    render(<Shell answer="accepted" />);
+
+    // `send_page_view: true` in the config call is what records it; sending
+    // one here as well would count the session's first page twice.
+    expect(events()).toHaveLength(0);
   });
 
   it("swallows a failed load: nothing thrown, nothing logged, nothing shown", () => {
@@ -290,8 +346,8 @@ describe("Analytics, on client-side navigation", () => {
     document.title = "Password generator · ToolKitty";
     rerender(<Shell answer="accepted" />);
 
-    expect(gtagCalls).toHaveLength(1);
-    expect(gtagCalls[0]).toEqual([
+    expect(events()).toHaveLength(1);
+    expect(events()[0]).toEqual([
       "event",
       PAGE_VIEW_EVENT,
       {
@@ -302,8 +358,8 @@ describe("Analytics, on client-side navigation", () => {
 
     // "Only the path and the title" literally: no fourth argument, and no
     // third key on the parameters.
-    expect(gtagCalls[0]).toHaveLength(3);
-    expect(Object.keys(gtagCalls[0]![2] as object).sort()).toEqual([
+    expect(events()[0]).toHaveLength(3);
+    expect(Object.keys(events()[0]![2] as object).sort()).toEqual([
       "page_path",
       "page_title",
     ]);
@@ -317,7 +373,7 @@ describe("Analytics, on client-side navigation", () => {
     rerender(<Shell answer="accepted" />);
     rerender(<Shell answer="accepted" />);
 
-    expect(gtagCalls).toHaveLength(1);
+    expect(events()).toHaveLength(1);
   });
 
   it("sends nothing on navigation when the visitor declined", () => {
@@ -342,17 +398,18 @@ describe("Analytics, on client-side navigation", () => {
   });
 
   it("survives gtag.js being blocked: no throw, no error, nothing sent", () => {
-    // What an ad-blocker leaves behind: the inline snippet may never have run,
-    // so there is no global to call.
-    delete window.gtag;
-
     const { rerender } = render(<Shell answer="accepted" />);
 
+    // What a blocked tag leaves behind: our own queue, which nothing drains.
+    // Removing the global entirely is the harsher case — the page view is
+    // simply not sent, and nothing about the page changes.
+    delete window.gtag;
     router.pathname = "/tools/temperature-converter";
 
     expect(() => rerender(<Shell answer="accepted" />)).not.toThrow();
     expect(
       screen.getByRole("heading", { level: 1, name: "Weight converter" }),
     ).toBeInTheDocument();
+    expect(events()).toHaveLength(0);
   });
 });

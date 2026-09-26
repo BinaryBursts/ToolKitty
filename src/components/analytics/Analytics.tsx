@@ -22,11 +22,22 @@ import { GA_MEASUREMENT_ID, isAnalyticsEnabled } from "@/config/site";
  *
  * Nothing here runs, and no request to a Google host is made, until the
  * visitor presses Accept on the consent banner: the component returns `null`
- * while the answer is `"unanswered"` or `"declined"`, so the script tags are
- * not in the DOM and — because the component renders nothing on the server
- * either — not in the exported HTML at all. Google Consent Mode's cookieless
- * pings are deliberately not used: REQ-11 asks for no request before Accept,
- * not a quieter one.
+ * while the answer is `"unanswered"` or `"declined"`, so the script tag is not
+ * in the DOM and — because the component renders nothing on the server either
+ * — not in the exported HTML at all. Google Consent Mode's cookieless pings
+ * are deliberately not used: REQ-11 asks for no request before Accept, not a
+ * quieter one.
+ *
+ * One departure from Google's copy-and-paste snippet, and it is deliberate:
+ * the data layer and the `js`/`config` calls are set up by
+ * {@link bootstrapGtag} here in the bundle, not by a second inline `<script>`
+ * tag. The behaviour is identical — the data layer is a queue that gtag.js
+ * drains whenever it arrives — but it means the site needs no inline script,
+ * so the content security policy REQ-15 calls for can stay
+ * `script-src 'self' https://www.googletagmanager.com` with no `unsafe-inline`
+ * and no per-deployment hash to recompute every time the measurement ID
+ * changes. It also means no script text is ever built by string
+ * concatenation.
  *
  * It is also allowed to fail. If the visitor's ad-blocker, network or Google
  * itself stops gtag.js loading, the load error is swallowed, nothing is
@@ -47,15 +58,20 @@ export type PageViewParameters = {
 };
 
 /**
- * The global `gtag` the bootstrap script below defines, typed down to the one
- * call this site makes. Anything else — a custom event, a `set` of a user id —
- * is a type error rather than a review comment.
+ * The global `gtag`, typed down to the three calls this site makes: the
+ * bootstrap pair, and one event that can only be a page view with only a path
+ * and a title. Anything else — a custom event, a `set` of a user id, an extra
+ * parameter — is a type error rather than a review comment.
  */
-type Gtag = (
-  command: "event",
-  eventName: typeof PAGE_VIEW_EVENT,
-  parameters: PageViewParameters,
-) => void;
+type Gtag = {
+  (command: "js", now: Date): void;
+  (command: "config", measurementId: string, settings: typeof GA_CONFIG): void;
+  (
+    command: "event",
+    eventName: typeof PAGE_VIEW_EVENT,
+    parameters: PageViewParameters,
+  ): void;
+};
 
 declare global {
   interface Window {
@@ -66,9 +82,6 @@ declare global {
 
 /** `id` of the `<script>` that fetches gtag.js. */
 export const GTAG_SCRIPT_ID = "ga4-gtag";
-
-/** `id` of the inline `<script>` that configures the measurement. */
-export const GTAG_INIT_SCRIPT_ID = "ga4-init";
 
 /** Where gtag.js is fetched from, for a given measurement ID. */
 export function gtagScriptSrc(measurementId: string): string {
@@ -92,16 +105,33 @@ export const GA_CONFIG = {
 } as const;
 
 /**
- * The inline bootstrap: the standard gtag.js snippet, with this site's
- * configuration and no other call.
+ * Google's bootstrap, written as code instead of as an inline script: create
+ * the data layer, define `gtag` as the thing that pushes onto it, and make the
+ * two opening calls. Running before, during or after gtag.js arrives is all
+ * the same to it — the queue is drained whenever the tag loads, and never if
+ * it is blocked.
+ *
+ * `arguments` rather than a rest parameter is not an oversight: gtag.js reads
+ * each queued item as an `arguments` object, and an array is not the same
+ * thing to it. That is also why this is a function expression and not an
+ * arrow.
  */
-export function gtagBootstrapScript(measurementId: string): string {
-  return [
-    "window.dataLayer = window.dataLayer || [];",
-    "function gtag(){dataLayer.push(arguments);}",
-    "gtag('js', new Date());",
-    `gtag('config', ${JSON.stringify(measurementId)}, ${JSON.stringify(GA_CONFIG)});`,
-  ].join("\n");
+export function bootstrapGtag(measurementId: string): void {
+  if (!Array.isArray(window.dataLayer)) {
+    window.dataLayer = [];
+  }
+
+  const dataLayer = window.dataLayer;
+
+  if (typeof window.gtag !== "function") {
+    window.gtag = function gtag() {
+      // eslint-disable-next-line prefer-rest-params
+      dataLayer.push(arguments);
+    };
+  }
+
+  window.gtag("js", new Date());
+  window.gtag("config", measurementId, GA_CONFIG);
 }
 
 /**
@@ -154,6 +184,21 @@ export function Analytics() {
    */
   const reportedPath = useRef<string | null>(null);
 
+  /** Whether the data layer and the `config` call have been set up already. */
+  const bootstrapped = useRef(false);
+
+  useEffect(() => {
+    // Once per session, the moment consent allows it. The ref is what keeps
+    // React's development double-invocation of effects from sending the first
+    // page view twice.
+    if (!enabled || bootstrapped.current) {
+      return;
+    }
+
+    bootstrapped.current = true;
+    bootstrapGtag(GA_MEASUREMENT_ID);
+  }, [enabled]);
+
   useEffect(() => {
     if (!enabled) {
       // Consent withdrawn, or never given: forget where we were, so a later
@@ -184,21 +229,12 @@ export function Analytics() {
   }
 
   return (
-    <>
-      <Script
-        id={GTAG_SCRIPT_ID}
-        src={gtagScriptSrc(GA_MEASUREMENT_ID)}
-        strategy="afterInteractive"
-        onError={ignoreLoadFailure}
-      />
-      <Script
-        id={GTAG_INIT_SCRIPT_ID}
-        strategy="afterInteractive"
-        dangerouslySetInnerHTML={{
-          __html: gtagBootstrapScript(GA_MEASUREMENT_ID),
-        }}
-      />
-    </>
+    <Script
+      id={GTAG_SCRIPT_ID}
+      src={gtagScriptSrc(GA_MEASUREMENT_ID)}
+      strategy="afterInteractive"
+      onError={ignoreLoadFailure}
+    />
   );
 }
 

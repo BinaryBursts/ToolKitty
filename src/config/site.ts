@@ -71,5 +71,19 @@ export const PRIVACY_LAST_UPDATED = "2026-09-14";
  */
 export const GA_MEASUREMENT_ID = "";
 
-/** True when a Google Analytics measurement ID has been configured. */
-export const isAnalyticsEnabled = (): boolean => GA_MEASUREMENT_ID.length > 0;
+/**
+ * The shape of a GA4 measurement ID: `G-` followed by letters and digits.
+ *
+ * The constant above is pasted in by hand and then put into a URL and handed
+ * to Google's tag, so it is checked rather than trusted (REQ-15: all input is
+ * validated before use — a value typed by the owner included). A value of any
+ * other shape cannot measure anything, so it is treated exactly like an absent
+ * one: analytics stays off and the site renders normally. `site.test.ts` fails
+ * the build if what is committed here is neither empty nor well formed, so a
+ * typo is caught before it is deployed rather than discovered as missing data.
+ */
+export const GA_MEASUREMENT_ID_PATTERN = /^G-[A-Za-z0-9]{4,24}$/;
+
+/** True when a usable Google Analytics measurement ID has been configured. */
+export const isAnalyticsEnabled = (): boolean =>
+  GA_MEASUREMENT_ID_PATTERN.test(GA_MEASUREMENT_ID);
