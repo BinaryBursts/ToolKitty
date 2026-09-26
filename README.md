@@ -50,6 +50,8 @@ Analytics measurement ID) and they are committed in
 src/
   app/           Routes and layouts (App Router). Static pages only.
   components/
+    analytics/   Google Analytics 4 loader, gated on consent
+    consent/     Consent banner and the session's consent answer
     layout/      Header, footer and page shell
     ui/          Shared UI kit: fields, buttons, readouts, copy controls
   config/        Committed public configuration (site.ts)
@@ -94,6 +96,40 @@ component in every state. That page is an internal review aid: it ships in the
 static export because there is no server to gate it behind, but it is `noindex`,
 unlinked from the site, and **must be left out of the sitemap** when the sitemap
 is added.
+
+## Analytics
+
+Google Analytics 4 is the only analytics on the site, it is loaded by
+[`src/components/analytics/Analytics.tsx`](src/components/analytics/Analytics.tsx),
+and it sends **page views only** — path and title, never anything a visitor
+typed into a tool. `src/components/analytics/page-views-only.test.ts` enforces
+that by scanning the source: only that one module may mention `gtag` or
+`dataLayer`, and every call it makes is listed in the test.
+
+Nothing is loaded and no cookie is set until the visitor presses **Accept** on
+the consent banner. Decline, or ignoring the banner, loads no script at all, and
+the answer is kept in memory for the session only — so a reload asks again.
+
+### The one manual step after merge
+
+The measurement ID is a public value and is committed, not configured through
+an environment variable. It ships empty, and an empty ID means analytics is
+simply switched off: every page and every tool works exactly as it does with
+analytics on, and no request is made to any Google host even after Accept.
+
+To turn measurement on:
+
+1. Create the GA4 property (or open the existing one) and copy its measurement
+   ID — the `G-XXXXXXXXXX` value from Admin → Data streams → the web stream.
+2. Paste it into `GA_MEASUREMENT_ID` in
+   [`src/config/site.ts`](src/config/site.ts), replacing the empty string, and
+   remove the `TODO(owner)` note above it.
+3. Commit and redeploy. Data appears in GA4 realtime as soon as somebody
+   accepts the banner.
+
+No secret is involved and no `.env` file is needed for this: a GA4 measurement
+ID is visible in the page source of every site that uses one and authorises
+nothing.
 
 ## Deployment
 

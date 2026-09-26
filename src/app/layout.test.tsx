@@ -181,4 +181,44 @@ describe("the shell's consent state", () => {
       vi.resetModules();
     }
   });
+
+  it("mounts the analytics loader inside the provider, after the content", async () => {
+    // Same trick as the banner above, for the same reason: the loader renders
+    // nothing until consent is "accepted", so only a marker in its place can
+    // show that the shell still mounts it — and that it is inside the
+    // provider, where it can read the answer, and after `<main>`, where it
+    // cannot hold up the first render (REQ-11).
+    vi.resetModules();
+    vi.doMock("@/components/analytics/Analytics", () => ({
+      Analytics: () => <div data-analytics="mounted" />,
+    }));
+
+    try {
+      const { default: RootLayout } = await import("./layout");
+
+      const markup = renderToStaticMarkup(
+        <RootLayout params={Promise.resolve({})}>
+          <p>Page content</p>
+        </RootLayout>,
+      );
+
+      expect(markup).toContain('data-analytics="mounted"');
+      expect(markup.indexOf('data-analytics="mounted"')).toBeGreaterThan(
+        markup.indexOf("</main>"),
+      );
+    } finally {
+      vi.doUnmock("@/components/analytics/Analytics");
+      vi.resetModules();
+    }
+  });
+
+  it("loads no analytics into the exported HTML, where nobody has accepted", async () => {
+    const markup = await renderLayoutMarkup();
+
+    // The real loader, unmocked: with the answer at "unanswered" it renders
+    // nothing, so the tag is not merely inert in the export — it is absent.
+    expect(markup).not.toContain("googletagmanager");
+    expect(markup).not.toContain("dataLayer");
+    expect(markup).not.toContain("gtag");
+  });
 });
