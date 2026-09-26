@@ -121,6 +121,10 @@ function ignoreLoadFailure(): void {
 /**
  * The page view for a path, built from the two permitted parameters and
  * nothing that was typed into a tool.
+ *
+ * The title is read from the document rather than passed in: it is called from
+ * an effect, which React runs after the commit that rendered the new page and
+ * applied its `<title>`, so what it reads is the page being reported.
  */
 function pageViewFor(pathname: string): PageViewParameters {
   return { page_path: pathname, page_title: document.title };

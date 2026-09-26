@@ -61,32 +61,42 @@ vi.mock("next/navigation", () => ({
  * `next/script` accepts is checked by the type-checker, since `Analytics`
  * imports the real component.
  */
+type ScriptProps = {
+  id?: string;
+  src?: string;
+  strategy?: string;
+  dangerouslySetInnerHTML?: { __html: string };
+  onError?: (error: Error) => void;
+};
+
+/** Every set of props the component handed to `next/script`, in order. */
+const rendered = vi.hoisted(() => ({ scripts: [] as unknown[] }));
+
 vi.mock("next/script", () => ({
-  default: ({
-    id,
-    src,
-    strategy,
-    dangerouslySetInnerHTML,
-  }: {
-    id?: string;
-    src?: string;
-    strategy?: string;
-    dangerouslySetInnerHTML?: { __html: string };
-    onError?: () => void;
-  }) => (
-    // A test double, not a script on a page: jsdom fetches nothing, and the
-    // real loading strategy belongs to `next/script`, which this replaces. The
-    // synchronous-script rule has nothing to warn about here.
-    // eslint-disable-next-line @next/next/no-sync-scripts
-    <script
-      id={id}
-      src={src}
-      data-strategy={strategy}
-      data-nscript-mock=""
-      {...(dangerouslySetInnerHTML ? { dangerouslySetInnerHTML } : {})}
-    />
-  ),
+  default: (props: ScriptProps) => {
+    rendered.scripts.push(props);
+
+    const { id, src, strategy, dangerouslySetInnerHTML } = props;
+
+    return (
+      // A test double, not a script on a page: jsdom fetches nothing, and the
+      // real loading strategy belongs to `next/script`, which this replaces.
+      // The synchronous-script rule has nothing to warn about here.
+      // eslint-disable-next-line @next/next/no-sync-scripts
+      <script
+        id={id}
+        src={src}
+        data-strategy={strategy}
+        data-nscript-mock=""
+        {...(dangerouslySetInnerHTML ? { dangerouslySetInnerHTML } : {})}
+      />
+    );
+  },
 }));
+
+/** The props of the script tag with this `id`, as the component set them. */
+const propsOf = (id: string): ScriptProps | undefined =>
+  (rendered.scripts as ScriptProps[]).find((script) => script.id === id);
 
 /** Sets the session's consent answer the way the banner's buttons would. */
 function ConsentAs({ answer }: { answer: ConsentState }) {
@@ -128,6 +138,8 @@ beforeEach(() => {
   config.measurementId = "G-TEST1234567";
   router.pathname = "/tools/weight-converter";
   document.title = "Weight converter · ToolKitty";
+
+  rendered.scripts = [];
 
   gtagCalls = [];
   window.gtag = ((...args: unknown[]) => {
@@ -233,6 +245,40 @@ describe("Analytics, once consent is given", () => {
     render(<Shell answer="accepted" />);
 
     expect(gtagCalls).toHaveLength(0);
+  });
+
+  it("swallows a failed load: nothing thrown, nothing logged, nothing shown", () => {
+    const consoleError = vi
+      .spyOn(console, "error")
+      .mockImplementation(() => undefined);
+    const consoleWarn = vi
+      .spyOn(console, "warn")
+      .mockImplementation(() => undefined);
+
+    try {
+      render(<Shell answer="accepted" />);
+
+      const onError = propsOf(GTAG_SCRIPT_ID)?.onError;
+      expect(onError).toBeTypeOf("function");
+
+      // What an ad-blocker, an offline visitor or a Google outage produces.
+      expect(() =>
+        onError?.(new Error("net::ERR_BLOCKED_BY_CLIENT")),
+      ).not.toThrow();
+
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(consoleWarn).not.toHaveBeenCalled();
+
+      // The page is untouched, and no message was put in front of the visitor.
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Weight converter" }),
+      ).toBeInTheDocument();
+      expect(screen.queryByRole("alert")).toBeNull();
+      expect(document.body.textContent).not.toMatch(/analytics|error/i);
+    } finally {
+      consoleError.mockRestore();
+      consoleWarn.mockRestore();
+    }
   });
 });
 
