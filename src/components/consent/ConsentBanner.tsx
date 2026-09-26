@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useLayoutEffect, useState, useSyncExternalStore } from "react";
 
 import { Button } from "@/components/ui";
+import { isAnalyticsEnabled } from "@/config/site";
 
 import { useConsent } from "./ConsentProvider";
 
@@ -162,12 +163,23 @@ function ConsentBar() {
  * baked-in banner would be an un-answerable question; and appearing in the
  * same commit as the space reserved for it means there is never a frame in
  * which a pinned bar covers the tool.
+ *
+ * **It asks nothing when there is nothing to ask about.** The banner exists to
+ * get permission for exactly one thing — Google Analytics — so when no usable
+ * measurement ID is configured, and therefore no script can load and no cookie
+ * can be set whatever the visitor presses, no banner is shown at all. That is
+ * the owner's decision, taken at review of this ticket; the alternative was to
+ * show it always. Paste an ID into `GA_MEASUREMENT_ID` and the banner appears
+ * on every page again, with no other change (see
+ * {@link file://../../config/site.ts} and the README's Analytics section).
+ * Consent stays `"unanswered"` in that state, which is what
+ * {@link file://../analytics/Analytics.tsx} needs it to be: nothing loads.
  */
 export function ConsentBanner() {
   const { consent } = useConsent();
   const hydrated = useHydrated();
 
-  if (!hydrated || consent !== "unanswered") {
+  if (!isAnalyticsEnabled() || !hydrated || consent !== "unanswered") {
     return null;
   }
 

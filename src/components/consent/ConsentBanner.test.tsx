@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { type ReactElement, type ReactNode } from "react";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
+import type * as SiteConfig from "@/config/site";
 
 import AboutPage from "@/app/about/page";
 import HomePage from "@/app/page";
@@ -17,6 +19,40 @@ import {
   ConsentBanner,
 } from "./ConsentBanner";
 import { ConsentProvider } from "./ConsentProvider";
+
+/**
+ * The measurement ID, swapped per test, mocked the way
+ * `src/components/analytics/Analytics.test.tsx` mocks it: a getter over a
+ * hoisted value, with the enabled/disabled rule left to the real pattern in
+ * `@/config/site`.
+ *
+ * The banner only asks about Google Analytics, so whether there is an
+ * analytics ID configured decides whether it appears at all. Most of the file
+ * runs with one configured — the state the site is in once the owner has
+ * pasted theirs — and "no analytics configured" is a suite of its own at the
+ * foot. Neither depends on what `GA_MEASUREMENT_ID` happens to hold on the day
+ * the suite runs.
+ */
+const config = vi.hoisted(() => ({ measurementId: "G-TEST1234567" }));
+
+const CONFIGURED_ID = "G-TEST1234567";
+
+vi.mock("@/config/site", async (importOriginal) => {
+  const actual = await importOriginal<typeof SiteConfig>();
+
+  return {
+    ...actual,
+    get GA_MEASUREMENT_ID() {
+      return config.measurementId;
+    },
+    isAnalyticsEnabled: () =>
+      actual.GA_MEASUREMENT_ID_PATTERN.test(config.measurementId),
+  };
+});
+
+afterEach(() => {
+  config.measurementId = CONFIGURED_ID;
+});
 
 /**
  * The classes both answers must carry, identically — written out here rather
@@ -318,5 +354,94 @@ describe("the banner on each kind of page", () => {
 
     expect(banner()).not.toBeNull();
     expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
+  });
+});
+
+/**
+ * With no usable measurement ID there is nothing the banner could ask
+ * permission for: no script can load and no cookie can be set whatever the
+ * visitor presses. The owner's decision at review of this ticket was to show
+ * no banner at all in that state rather than ask an empty question, so this is
+ * the behaviour of the site as it is committed today — `GA_MEASUREMENT_ID` is
+ * still the empty placeholder.
+ */
+describe("when no analytics measurement ID is configured", () => {
+  const noBanner = (label: string) => {
+    it(`shows nothing on ${label}, and leaves the page whole`, () => {
+      render(<Shell />);
+
+      expect(banner()).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: CONSENT_ACCEPT_LABEL }),
+      ).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: CONSENT_DECLINE_LABEL }),
+      ).toBeNull();
+      expect(screen.queryByText(CONSENT_MESSAGE)).toBeNull();
+
+      // The page itself is untouched — no banner is not a broken page.
+      expect(
+        screen.getByRole("heading", { level: 1, name: "Weight converter" }),
+      ).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "Convert" })).toBeEnabled();
+    });
+  };
+
+  describe("because the placeholder is still empty", () => {
+    beforeEach(() => {
+      config.measurementId = "";
+    });
+
+    noBanner("a page");
+
+    it("reserves no space at the foot of the page", () => {
+      render(<Shell />);
+
+      expect(
+        document.body.style.getPropertyValue(CONSENT_HEIGHT_PROPERTY),
+      ).toBe("");
+    });
+
+    it("shows nothing on any of the real pages either", () => {
+      const { unmount } = render(<Shell>{<HomePage />}</Shell>);
+      expect(banner()).toBeNull();
+      unmount();
+
+      const privacy = render(<Shell>{<PrivacyPage />}</Shell>);
+      expect(banner()).toBeNull();
+      privacy.unmount();
+
+      render(<Shell>{<NotFound />}</Shell>);
+      expect(banner()).toBeNull();
+    });
+  });
+
+  describe("because what is configured is not a measurement ID", () => {
+    beforeEach(() => {
+      // Treated exactly like an absent one, as `Analytics` treats it: a value
+      // of the wrong shape measures nothing, so asking about it would be
+      // asking about nothing.
+      config.measurementId = "UA-12345-6";
+    });
+
+    noBanner("a page whose ID is malformed");
+  });
+
+  it("comes back the moment an ID is configured, with no other change", () => {
+    config.measurementId = "";
+    const off = render(<Shell />);
+    expect(banner()).toBeNull();
+    off.unmount();
+
+    config.measurementId = CONFIGURED_ID;
+    render(<Shell />);
+
+    expect(banner()).not.toBeNull();
+    expect(
+      screen.getByRole("button", { name: CONSENT_ACCEPT_LABEL }),
+    ).toBeEnabled();
+    expect(
+      screen.getByRole("button", { name: CONSENT_DECLINE_LABEL }),
+    ).toBeEnabled();
   });
 });

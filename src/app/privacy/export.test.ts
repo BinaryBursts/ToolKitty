@@ -67,6 +67,20 @@ const exportedToolPages = (): readonly string[] => {
     .map((file) => readFileSync(join(toolsDir, file), "utf8"));
 };
 
+/**
+ * Every HTML file the export writes, wherever it sits in `out/`.
+ *
+ * Used by the analytics check below, which has to be able to say "no exported
+ * page" rather than "none of the pages we thought to list".
+ */
+const everyExportedHtmlFile = (): readonly { file: string; html: string }[] => {
+  if (!existsSync(outDir)) return [];
+
+  return readdirSync(outDir, { recursive: true, encoding: "utf8" })
+    .filter((file) => file.endsWith(".html"))
+    .map((file) => ({ file, html: readFileSync(join(outDir, file), "utf8") }));
+};
+
 let privacyHtml = "";
 let aboutHtml = "";
 let homeHtml = "";
@@ -204,6 +218,30 @@ describe("the static export", () => {
         footer,
         `${name} has no privacy policy link in the footer`,
       ).toContain('href="/privacy"');
+    }
+  });
+
+  /**
+   * REQ-11 / TKT-22: no analytics tag is in the HTML a visitor is served.
+   *
+   * The loader renders nothing until consent is `"accepted"`, which cannot
+   * have happened when the file was written at build time — so the exported
+   * HTML must carry no Google tag at all, and a visitor who never answers the
+   * banner, or answers Decline, never gets one. This is checked from the same
+   * build as the assertions above rather than from a file of its own: two
+   * files each running `next build` would race over `.next/` and `out/`.
+   */
+  it("puts no Google Analytics tag in any exported page", () => {
+    const pages = everyExportedHtmlFile();
+
+    expect(pages.length).toBeGreaterThan(0);
+
+    for (const { file, html } of pages) {
+      expect(html, `${file} contains a gtag.js tag`).not.toContain(
+        "googletagmanager",
+      );
+      expect(html, `${file} contains a data layer`).not.toContain("dataLayer");
+      expect(html, `${file} contains a gtag call`).not.toContain("gtag(");
     }
   });
 });

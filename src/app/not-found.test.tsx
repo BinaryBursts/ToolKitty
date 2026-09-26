@@ -91,8 +91,10 @@ describe("NotFound", () => {
   it("holds no form control, so nothing on it can fail without JavaScript", () => {
     const { container } = render(<NotFound />);
 
-    // The approved screen draws a search box here; search lives on the
-    // homepage (REQ-4), and a box that filtered nothing would be a lie.
+    // The approved screen draws a search box here; the owner settled it at
+    // review — keep the link to the homepage search — because tool search is
+    // the homepage's (REQ-4) and a box here would filter nothing. This test is
+    // what stops the box coming back by accident.
     expect(container.querySelector("input, button")).toBeNull();
   });
 });

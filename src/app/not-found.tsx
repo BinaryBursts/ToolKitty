@@ -141,6 +141,12 @@ function NotFoundMark() {
  * The way out is taken from the registry (REQ-2): every registered tool is
  * listed, so a fifth tool appears here the moment its entry lands and a visitor
  * who mistyped a slug can see the one they meant.
+ *
+ * The approved screen draws a search box in the aside; this page links across
+ * to the homepage search instead. That was raised at review and settled by the
+ * owner — keep the link — so it is a decision, not an oversight: tool search is
+ * the homepage's (REQ-4), and a box here would either duplicate it or sit there
+ * filtering nothing.
  */
 export default function NotFound() {
   const tools = getToolListings();
