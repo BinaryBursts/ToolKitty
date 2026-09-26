@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { TEMPERATURE_SCALES } from "@/lib/temperature";
+import { TEMPERATURE_SCALES, temperatureMessage } from "@/lib/temperature";
 
 import { TemperatureConverter } from "./TemperatureConverter";
 
@@ -42,6 +42,13 @@ function setClipboard(clipboard: unknown) {
   });
 }
 
+/**
+ * The refusal wording, written out rather than imported, so that changing the
+ * shared string fails here and is a decision someone takes on purpose. The
+ * approved screen draws a longer sentence; this shorter one, already shipped
+ * in `src/lib/temperature.ts`, is the wording confirmed at review of this
+ * ticket, and the test below holds the screen and the module to the same one.
+ */
 const BELOW_ABSOLUTE_ZERO =
   "That is below absolute zero (-273.15 °C / -459.67 °F / 0 K).";
 
@@ -202,6 +209,23 @@ describe("TemperatureConverter", () => {
     expect(field()).toHaveClass("o-input--error");
     // A refusal is announced as soon as it replaces a result.
     expect(screen.getByRole("alert")).toHaveTextContent(BELOW_ABSOLUTE_ZERO);
+  });
+
+  it("words both refusals exactly as the shared conversion module does", () => {
+    // The wording lives in one place for both converters (confirmed at review
+    // of this ticket, against the longer sentence the screen was drawn with).
+    // If the module's string changes, this fails rather than the screen
+    // quietly saying something the weight converter does not.
+    expect(temperatureMessage("below-absolute-zero")).toBe(BELOW_ABSOLUTE_ZERO);
+    expect(temperatureMessage("not-a-number")).toBe("Enter a number.");
+
+    render(<TemperatureConverter />);
+
+    type("-300");
+    expect(screen.getByText(BELOW_ABSOLUTE_ZERO)).toBeInTheDocument();
+
+    type("warm");
+    expect(screen.getByText("Enter a number.")).toBeInTheDocument();
   });
 
   it("converts absolute zero itself, which is a value and not an error", () => {

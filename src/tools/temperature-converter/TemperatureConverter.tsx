@@ -105,6 +105,14 @@ export function TemperatureConverter() {
       ? formatTemperature(converted)
       : null;
 
+  // **Both refusals are worded by the conversion module, not here.** The
+  // approved screen draws a longer sentence for the below-absolute-zero case
+  // ("That value is below absolute zero. The coldest possible temperature
+  // is…"); the shorter wording `src/lib/temperature.ts` already ships is the
+  // one confirmed at review of this ticket, so that the two converters
+  // complain in one voice and the wording has a single home. The design and
+  // the shipped string differ on this one point — do not "correct" the screen
+  // back to the drawing without reopening that decision.
   const error =
     parsed.status === "not-a-number" || parsed.status === "below-absolute-zero"
       ? temperatureMessage(parsed.status)
