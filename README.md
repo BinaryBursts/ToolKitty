@@ -132,7 +132,8 @@ img-src 'self' data: https://www.google-analytics.com;
 The measurement ID is a public value and is committed, not configured through
 an environment variable. It ships empty, and an empty ID means analytics is
 simply switched off: every page and every tool works exactly as it does with
-analytics on, and no request is made to any Google host even after Accept.
+analytics on, no consent banner is shown, and no request is made to any Google
+host.
 
 To turn measurement on:
 
@@ -144,8 +145,8 @@ To turn measurement on:
 3. Run `npm test`. A value that is not of the form `G-` plus letters and digits
    fails `src/config/site.test.ts`, and the site would treat it as absent and
    leave analytics off rather than measure into nowhere.
-4. Commit and redeploy. Data appears in GA4 realtime as soon as somebody
-   accepts the banner.
+4. Commit and redeploy. The consent banner starts appearing on every page, and
+   data appears in GA4 realtime as soon as somebody accepts it.
 
 No secret is involved and no `.env` file is needed for this: a GA4 measurement
 ID is visible in the page source of every site that uses one and authorises
